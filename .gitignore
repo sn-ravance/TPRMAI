@@ -1,0 +1,88 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Testing
+/coverage
+
+# Next.js
+/.next/
+/out/
+
+# Production
+/build
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env*.local
+.env
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Prisma
+prisma/migrations/*
+
+# Uploads
+/uploads/*
+!/uploads/.gitkeep
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Claude Code
+.claude/
+claude-*-cwd
+
+# Log files
+*.log
+output*.txt
+*_output.txt
+*_results.txt
+setup_log.txt
+template_info.txt
+slide1_structure.xml
+
+# Node binaries (Windows)
+node-v*/
+node.zip
+node_version.txt
+node-test-output.txt
+
+# Vendor document folders (symlinks to sensitive data)
+Articulate Global LLC
+
+# Large presentation files
+*.pptx
+
+# Temp files
+db_check.txt
+db_reset.txt
+dir_listing.txt
+regen.txt
+seed*.txt
+test_*.txt
+npm_*.txt
+prisma_*.txt
+
+# SQLite database
+*.db
+*.db-journal
+dev.db
