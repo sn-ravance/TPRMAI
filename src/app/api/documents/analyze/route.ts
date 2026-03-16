@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import Anthropic from '@anthropic-ai/sdk'
-import * as XLSX from 'xlsx'
+import { AzureChatOpenAI } from '@langchain/openai'
+import { HumanMessage, SystemMessage } from '@langchain/core/messages'
+import ExcelJS from 'exceljs'
 import JSZip from 'jszip'
 
 // Force dynamic to prevent static generation issues with pdf-parse
@@ -13,7 +14,29 @@ const pdfParse = async (buffer: Buffer) => {
   return pdf.default(buffer)
 }
 
-const anthropic = new Anthropic()
+// Lazy initialization of Claude via Azure AI Foundry
+let _llm: AzureChatOpenAI | null = null
+function getLLM(): AzureChatOpenAI {
+  if (!_llm) {
+    const apiKey = process.env.AZURE_OPENAI_API_KEY
+    const instanceName = process.env.AZURE_OPENAI_INSTANCE_NAME
+    const deploymentName = process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'claude-opus-4-6'
+
+    if (!apiKey || !instanceName) {
+      throw new Error('Azure AI Foundry configuration missing. Please set AZURE_OPENAI_API_KEY and AZURE_OPENAI_INSTANCE_NAME environment variables.')
+    }
+
+    _llm = new AzureChatOpenAI({
+      azureOpenAIApiKey: apiKey,
+      azureOpenAIApiInstanceName: instanceName,
+      azureOpenAIApiDeploymentName: deploymentName,
+      azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-08-01-preview',
+      temperature: 0.3,
+      maxTokens: 4096,
+    })
+  }
+  return _llm
+}
 
 const ANALYSIS_PROMPT = `You are an expert Third Party Risk Management (TPRM) analyst.
 Analyze the provided vendor document and extract:
@@ -71,17 +94,26 @@ async function extractDocxText(buffer: Buffer): Promise<string> {
   }
 }
 
-// Extract text from XLSX
+// Extract text from XLSX using ExcelJS
 async function extractXlsxText(buffer: Buffer): Promise<string> {
   try {
-    const workbook = XLSX.read(buffer, { type: 'buffer' })
+    const workbook = new ExcelJS.Workbook()
+    // Use stream-based loading for ExcelJS compatibility
+    const { Readable } = await import('stream')
+    const stream = Readable.from(buffer)
+    await workbook.xlsx.read(stream)
     const texts: string[] = []
 
-    for (const sheetName of workbook.SheetNames) {
-      const sheet = workbook.Sheets[sheetName]
-      const csv = XLSX.utils.sheet_to_csv(sheet)
-      texts.push(`=== Sheet: ${sheetName} ===\n${csv}`)
-    }
+    workbook.eachSheet((worksheet, sheetId) => {
+      const rows: string[] = []
+      worksheet.eachRow((row, rowNumber) => {
+        const values = row.values as (string | number | boolean | Date | null | undefined)[]
+        // row.values is 1-indexed, first element is undefined
+        const rowData = values.slice(1).map(v => v?.toString() ?? '').join(',')
+        rows.push(rowData)
+      })
+      texts.push(`=== Sheet: ${worksheet.name} ===\n${rows.join('\n')}`)
+    })
 
     return texts.join('\n\n')
   } catch (error) {
@@ -164,51 +196,41 @@ export async function POST(request: Request) {
         break
     }
 
-    // Analyze with Claude
-    let response
+    // Analyze with Claude via Azure AI Foundry
+    const llm = getLLM()
+    let analysisText: string
 
     if (isImage && imageData) {
-      // Use vision API for images
-      response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 4096,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'image',
-                source: imageData as { type: 'base64'; media_type: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp'; data: string },
+      // Use vision capability for images
+      const messages = [
+        new SystemMessage(ANALYSIS_PROMPT),
+        new HumanMessage({
+          content: [
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${imageData.media_type};base64,${imageData.data}`,
               },
-              {
-                type: 'text',
-                text: `${ANALYSIS_PROMPT}\n\nAnalyze this vendor document image (likely an architecture diagram, certificate, or similar):`,
-              },
-            ],
-          },
-        ],
-      })
+            },
+            {
+              type: 'text',
+              text: 'Analyze this vendor document image (likely an architecture diagram, certificate, or similar):',
+            },
+          ],
+        }),
+      ]
+      const response = await llm.invoke(messages)
+      analysisText = response.content as string
     } else {
       // Use text API for documents
       const truncatedContent = content.slice(0, 100000) // Claude has ~200k context, leave room for prompt
-      response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 4096,
-        system: ANALYSIS_PROMPT,
-        messages: [
-          {
-            role: 'user',
-            content: `Analyze this vendor document:\n\n${truncatedContent}`,
-          },
-        ],
-      })
+      const messages = [
+        new SystemMessage(ANALYSIS_PROMPT),
+        new HumanMessage(`Analyze this vendor document:\n\n${truncatedContent}`),
+      ]
+      const response = await llm.invoke(messages)
+      analysisText = response.content as string
     }
-
-    // Extract text content from response
-    const analysisText = response.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-      .map((block) => block.text)
-      .join('\n')
 
     let analysis
     try {

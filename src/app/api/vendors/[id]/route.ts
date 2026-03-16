@@ -23,11 +23,12 @@ const updateVendorSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const vendor = await prisma.vendor.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         riskProfiles: {
           orderBy: { createdAt: 'desc' },
@@ -67,14 +68,15 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const body = await request.json()
     const validated = updateVendorSchema.parse(body)
 
     const existingVendor = await prisma.vendor.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!existingVendor) {
@@ -90,7 +92,7 @@ export async function PUT(
     }
 
     const vendor = await prisma.vendor.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
     })
 
@@ -123,11 +125,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const vendor = await prisma.vendor.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!vendor) {
@@ -136,7 +139,7 @@ export async function DELETE(
 
     // Soft delete - set status to TERMINATED
     await prisma.vendor.update({
-      where: { id: params.id },
+      where: { id },
       data: { status: 'TERMINATED' },
     })
 
@@ -145,7 +148,7 @@ export async function DELETE(
       data: {
         action: 'DELETE',
         entityType: 'Vendor',
-        entityId: params.id,
+        entityId: id,
         oldValues: JSON.stringify({ status: vendor.status }),
         newValues: JSON.stringify({ status: 'TERMINATED' }),
       },

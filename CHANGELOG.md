@@ -2,6 +2,23 @@
 
 All notable changes to AI TPRM Machine will be documented in this file.
 
+## [1.1.0] - 2026-03-16
+
+### Changed
+- Clarified Claude via Azure AI Foundry as PRIMARY AI provider (OpenAI is optional alternative only)
+- Updated document analysis route to use Azure AI Foundry instead of direct Anthropic SDK
+- Replaced vulnerable `xlsx` package with `exceljs` for Excel file processing
+- Updated route handlers for Next.js 16 async params compatibility
+- Added Turbopack configuration for Next.js 16
+
+### Fixed
+- All npm security vulnerabilities resolved (0 remaining)
+- Next.js upgraded from 14.2.0 to 16.1.6
+
+### Documentation
+- Updated .env.example to clarify AI provider hierarchy
+- Updated CLAUDE.MD with current tech stack
+
 ## [1.0.0] - 2026-03-16
 
 ### Added
@@ -10,7 +27,7 @@ All notable changes to AI TPRM Machine will be documented in this file.
 - Created app-context.json with project configuration
 
 ### Project Structure (Imported)
-- Next.js 14 frontend with Tailwind CSS and Radix UI
+- Next.js 16 frontend with Tailwind CSS and Radix UI
 - Prisma ORM with SQLite database
 - 6 AI Agents: VERA, CARA, DORA, SARA, RITA, MARS
 - Core entities: Vendors, Risk Profiles, Risk Assessments, Documents, Risk Findings, Reports, Remediation Actions
@@ -18,8 +35,8 @@ All notable changes to AI TPRM Machine will be documented in this file.
 - AuditBoard API integration skill
 
 ### Security
-- Identified Next.js 14.2.0 security vulnerability (needs upgrade)
-- 22 npm vulnerabilities detected (to be addressed)
+- ~~Identified Next.js 14.2.0 security vulnerability~~ (fixed in 1.1.0)
+- ~~22 npm vulnerabilities detected~~ (fixed in 1.1.0)
 
 ---
 

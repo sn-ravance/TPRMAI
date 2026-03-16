@@ -2,9 +2,7 @@
 
 ## High Priority
 
-- [ ] **Security: Upgrade Next.js** - Current version 14.2.0 has a security vulnerability. Upgrade to latest patched version.
-- [ ] **Security: Fix npm vulnerabilities** - 22 vulnerabilities detected (2 critical, 15 high). Run `npm audit fix` or update specific packages.
-- [ ] **Environment: Configure AI credentials** - Update AZURE_OPENAI_API_KEY and related settings in .env for AI features
+- [ ] **Environment: Configure AI credentials** - Update AZURE_OPENAI_API_KEY and related settings in .env for AI features (Claude via Azure AI Foundry)
 
 ## Medium Priority
 
@@ -18,7 +16,6 @@
 
 - [ ] **Cleanup: Remove unused scripts** - Many standalone .js scripts in root (create_*.js, read_*.js) - evaluate if needed
 - [ ] **Cleanup: Remove Windows-specific files** - .bat files, node-v22 references may not be needed on Mac
-- [ ] **Docs: Update CLAUDE.MD** - Refresh project documentation to reflect current state
 - [ ] **CI/CD: Set up GitHub Actions** - Configure automated testing and deployment pipeline
 
 ## Completed
@@ -33,3 +30,8 @@
 - [x] Make LLM initialization lazy (build succeeds without AI credentials)
 - [x] Consolidate dual app structure (merged /app and /src/app)
 - [x] Verify build passes (`npm run build`)
+- [x] **Security: Upgrade Next.js** - Upgraded from 14.2.0 to 16.1.6
+- [x] **Security: Fix npm vulnerabilities** - All 22 vulnerabilities resolved (0 remaining)
+- [x] **Docs: Update CLAUDE.MD** - Added Claude via Azure AI Foundry as primary AI provider
+- [x] **Clarify AI provider** - Claude via Azure AI Foundry is PRIMARY, OpenAI is optional alternative only
+- [x] **Replace xlsx with exceljs** - Fixed vulnerable xlsx dependency

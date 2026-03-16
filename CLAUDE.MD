@@ -14,7 +14,13 @@ This project integrates AI capabilities with enterprise GRC (Governance, Risk, a
 ## Technology Stack
 
 - **Runtime**: Node.js v22.12.0
-- **Framework**: Next.js
+- **Framework**: Next.js 16
+- **AI Provider**: Claude via Azure AI Foundry (PRIMARY)
+  - Primary: Claude Opus 4.6
+  - Fallback: Claude Opus 4.5
+  - OpenAI is optional alternative only
+- **ORM**: Prisma with SQLite
+- **UI**: Radix UI + Tailwind CSS
 - **API Integrations**: AuditBoard REST API
 
 ## API Integrations
