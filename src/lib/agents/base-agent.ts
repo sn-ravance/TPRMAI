@@ -1,17 +1,30 @@
 import { AzureChatOpenAI } from '@langchain/openai'
 import { HumanMessage, SystemMessage } from '@langchain/core/messages'
+import { DefaultAzureCredential, getBearerTokenProvider } from '@azure/identity'
 import prisma from '@/lib/db'
-import type { AgentConfig, AgentName, AgentResult, AgentLogEntry } from './types'
+import type { AgentConfig, AgentResult, AgentLogEntry } from './types'
+
+// Azure AI Foundry cognitive services scope for token authentication
+const AZURE_COGNITIVE_SERVICES_SCOPE = 'https://cognitiveservices.azure.com/.default'
 
 export abstract class BaseAgent {
   protected config: AgentConfig
   private _primaryLLM: AzureChatOpenAI | null = null
   private _fallbackLLM: AzureChatOpenAI | null = null
+  private _credential: DefaultAzureCredential | null = null
 
   constructor(config: AgentConfig) {
     this.config = config
     // Lazy initialization - don't create LLM instances in constructor
-    // This allows the build to succeed without AI credentials configured
+    // This allows the build to succeed without being logged into Azure
+  }
+
+  private get credential(): DefaultAzureCredential {
+    if (!this._credential) {
+      // Uses az login, managed identity, or other Azure auth methods
+      this._credential = new DefaultAzureCredential()
+    }
+    return this._credential
   }
 
   protected get primaryLLM(): AzureChatOpenAI {
@@ -30,19 +43,24 @@ export abstract class BaseAgent {
 
   private initializePrimaryLLM(): AzureChatOpenAI {
     // Primary: Azure AI Foundry with Claude Opus 4.6
-    console.log(`[${this.config.name}] Initializing primary LLM: Azure AI Foundry with Claude Opus 4.6`)
+    console.log(`[${this.config.name}] Initializing primary LLM: Azure AI Foundry with Claude Opus 4.6 (Entra ID auth)`)
 
-    const apiKey = process.env.AZURE_OPENAI_API_KEY
-    const instanceName = process.env.AZURE_OPENAI_INSTANCE_NAME
+    const endpoint = process.env.AZURE_OPENAI_ENDPOINT
     const deploymentName = process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'claude-opus-4-6'
 
-    if (!apiKey || !instanceName) {
-      throw new Error(`Azure OpenAI configuration missing. Please set AZURE_OPENAI_API_KEY and AZURE_OPENAI_INSTANCE_NAME environment variables.`)
+    if (!endpoint) {
+      throw new Error('Azure AI Foundry configuration missing. Please set AZURE_OPENAI_ENDPOINT environment variable and ensure you are logged in via "az login".')
     }
 
+    // Use token provider for Entra ID authentication
+    const azureADTokenProvider = getBearerTokenProvider(
+      this.credential,
+      AZURE_COGNITIVE_SERVICES_SCOPE
+    )
+
     return new AzureChatOpenAI({
-      azureOpenAIApiKey: apiKey,
-      azureOpenAIApiInstanceName: instanceName,
+      azureADTokenProvider,
+      azureOpenAIEndpoint: endpoint,
       azureOpenAIApiDeploymentName: deploymentName,
       azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-08-01-preview',
       temperature: this.config.temperature,
@@ -52,19 +70,24 @@ export abstract class BaseAgent {
 
   private initializeFallbackLLM(): AzureChatOpenAI {
     // Fallback: Azure AI Foundry with Claude Opus 4.5
-    console.log(`[${this.config.name}] Initializing fallback LLM: Azure AI Foundry with Claude Opus 4.5`)
+    console.log(`[${this.config.name}] Initializing fallback LLM: Azure AI Foundry with Claude Opus 4.5 (Entra ID auth)`)
 
-    const apiKey = process.env.AZURE_OPENAI_API_KEY
-    const instanceName = process.env.AZURE_OPENAI_INSTANCE_NAME
+    const endpoint = process.env.AZURE_OPENAI_ENDPOINT
     const deploymentName = process.env.AZURE_OPENAI_FALLBACK_DEPLOYMENT_NAME || 'claude-opus-4-5'
 
-    if (!apiKey || !instanceName) {
-      throw new Error(`Azure OpenAI configuration missing. Please set AZURE_OPENAI_API_KEY and AZURE_OPENAI_INSTANCE_NAME environment variables.`)
+    if (!endpoint) {
+      throw new Error('Azure AI Foundry configuration missing. Please set AZURE_OPENAI_ENDPOINT environment variable and ensure you are logged in via "az login".')
     }
 
+    // Use token provider for Entra ID authentication
+    const azureADTokenProvider = getBearerTokenProvider(
+      this.credential,
+      AZURE_COGNITIVE_SERVICES_SCOPE
+    )
+
     return new AzureChatOpenAI({
-      azureOpenAIApiKey: apiKey,
-      azureOpenAIApiInstanceName: instanceName,
+      azureADTokenProvider,
+      azureOpenAIEndpoint: endpoint,
       azureOpenAIApiDeploymentName: deploymentName,
       azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-08-01-preview',
       temperature: this.config.temperature,

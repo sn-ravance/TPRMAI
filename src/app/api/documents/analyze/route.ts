@@ -2,11 +2,15 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { AzureChatOpenAI } from '@langchain/openai'
 import { HumanMessage, SystemMessage } from '@langchain/core/messages'
+import { DefaultAzureCredential, getBearerTokenProvider } from '@azure/identity'
 import ExcelJS from 'exceljs'
 import JSZip from 'jszip'
 
 // Force dynamic to prevent static generation issues with pdf-parse
 export const dynamic = 'force-dynamic'
+
+// Azure AI Foundry cognitive services scope for token authentication
+const AZURE_COGNITIVE_SERVICES_SCOPE = 'https://cognitiveservices.azure.com/.default'
 
 // Lazy import pdf-parse to avoid build-time file loading issues
 const pdfParse = async (buffer: Buffer) => {
@@ -14,21 +18,32 @@ const pdfParse = async (buffer: Buffer) => {
   return pdf.default(buffer)
 }
 
-// Lazy initialization of Claude via Azure AI Foundry
+// Lazy initialization of Claude via Azure AI Foundry with Entra ID auth
 let _llm: AzureChatOpenAI | null = null
+let _credential: DefaultAzureCredential | null = null
+
 function getLLM(): AzureChatOpenAI {
   if (!_llm) {
-    const apiKey = process.env.AZURE_OPENAI_API_KEY
-    const instanceName = process.env.AZURE_OPENAI_INSTANCE_NAME
+    const endpoint = process.env.AZURE_OPENAI_ENDPOINT
     const deploymentName = process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'claude-opus-4-6'
 
-    if (!apiKey || !instanceName) {
-      throw new Error('Azure AI Foundry configuration missing. Please set AZURE_OPENAI_API_KEY and AZURE_OPENAI_INSTANCE_NAME environment variables.')
+    if (!endpoint) {
+      throw new Error('Azure AI Foundry configuration missing. Please set AZURE_OPENAI_ENDPOINT environment variable and ensure you are logged in via "az login".')
     }
 
+    // Use Entra ID authentication (az login, managed identity, etc.)
+    if (!_credential) {
+      _credential = new DefaultAzureCredential()
+    }
+
+    const azureADTokenProvider = getBearerTokenProvider(
+      _credential,
+      AZURE_COGNITIVE_SERVICES_SCOPE
+    )
+
     _llm = new AzureChatOpenAI({
-      azureOpenAIApiKey: apiKey,
-      azureOpenAIApiInstanceName: instanceName,
+      azureADTokenProvider,
+      azureOpenAIEndpoint: endpoint,
       azureOpenAIApiDeploymentName: deploymentName,
       azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-08-01-preview',
       temperature: 0.3,

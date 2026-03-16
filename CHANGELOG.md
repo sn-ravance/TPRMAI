@@ -2,6 +2,19 @@
 
 All notable changes to AI TPRM Machine will be documented in this file.
 
+## [1.2.0] - 2026-03-16
+
+### Changed
+- Switched to Entra ID authentication for Azure AI Foundry (no API keys required)
+- Uses `DefaultAzureCredential` from @azure/identity for seamless az login integration
+- Removed API key requirements from base-agent.ts and document analysis route
+
+### Added
+- @azure/identity package for Azure authentication
+
+### Documentation
+- Updated .env.example with Entra ID auth instructions
+
 ## [1.1.0] - 2026-03-16
 
 ### Changed
