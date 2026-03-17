@@ -39,3 +39,4 @@
 - [x] **Retrofit Phase B** - OIDC auth, database-driven RBAC, JWT sessions, admin UI, permission middleware
 - [x] **Retrofit Phase C** - Multi-provider AI abstraction, model tiering, LangChain removal
 - [x] **Retrofit Phase D** - UI pages (Assessments, Documents, Reports, Settings), DataTable component, admin table upgrade
+- [x] **Retrofit Phase E** - Rich seed data, security headers, Terraform templates, deployment config

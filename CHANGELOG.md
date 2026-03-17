@@ -2,6 +2,18 @@
 
 All notable changes to AI TPRM Machine will be documented in this file.
 
+## [2.3.0] - 2026-03-17
+
+### Added
+- **Rich seed data**: 7 realistic vendors (Snowflake, Salesforce, CrowdStrike, Workday, Stripe, Acme Logistics, CloudSecure Analytics) with risk profiles, documents, assessments, findings, reports, and agent activity
+- **Terraform infrastructure templates** (`infra/main.tf`): Azure Resource Group, PostgreSQL Flexible Server, Key Vault, Container Registry, App Service
+- **Deployment configuration** (`.ship-it.yml`): Build, deploy, and rollback steps for local/staging/production
+- **Security headers** in `next.config.js`: CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy
+
+### Changed
+- Seed data expanded from 3 basic vendors to 7 fully-populated vendors with related entities across all tables
+- `.gitignore` updated to exclude Terraform state files and production tfvars
+
 ## [2.2.0] - 2026-03-17
 
 ### Added

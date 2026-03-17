@@ -86,6 +86,14 @@ prisma_*.txt
 *.db-journal
 dev.db
 
+# Terraform
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.backup
+infra/.terraform.lock.hcl
+infra/prod.tfvars
+infra/staging.tfvars
+
 # Legacy scripts (from original OneDrive import)
 TPRM_Demo_OnePager.md
 build_slide.js
