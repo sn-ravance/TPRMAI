@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/lib/auth-context'
 import {
   LayoutDashboard,
   Building2,
@@ -13,21 +14,45 @@ import {
   Settings,
   Bot,
   Shield,
+  Users,
+  KeyRound,
 } from 'lucide-react'
 
-const navigation = [
+interface NavItem {
+  name: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  permission?: string // resource.action format; omit for items visible to all authenticated users
+}
+
+const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Vendors', href: '/vendors', icon: Building2 },
-  { name: 'Assessments', href: '/assessments', icon: ClipboardCheck },
-  { name: 'Documents', href: '/documents', icon: FileText },
-  { name: 'Findings', href: '/findings', icon: AlertTriangle },
-  { name: 'Reports', href: '/reports', icon: BarChart3 },
-  { name: 'AI Agents', href: '/agents', icon: Bot },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Vendors', href: '/vendors', icon: Building2, permission: 'vendors.view' },
+  { name: 'Assessments', href: '/assessments', icon: ClipboardCheck, permission: 'assessments.view' },
+  { name: 'Documents', href: '/documents', icon: FileText, permission: 'documents.view' },
+  { name: 'Findings', href: '/findings', icon: AlertTriangle, permission: 'findings.view' },
+  { name: 'Reports', href: '/reports', icon: BarChart3, permission: 'reports.view' },
+  { name: 'AI Agents', href: '/agents', icon: Bot, permission: 'agents.view' },
+]
+
+const adminNavigation: NavItem[] = [
+  { name: 'Users', href: '/admin/users', icon: Users, permission: 'users.view' },
+  { name: 'Roles', href: '/admin/roles', icon: KeyRound, permission: 'roles.view' },
+  { name: 'Settings', href: '/settings', icon: Settings, permission: 'settings.view' },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
+  const { user, hasPermission } = useAuth()
+
+  const isVisible = (item: NavItem) => {
+    if (!item.permission) return true
+    const [resource, action] = item.permission.split('.')
+    return hasPermission(resource, action)
+  }
+
+  const visibleNav = navigation.filter(isVisible)
+  const visibleAdmin = adminNavigation.filter(isVisible)
 
   return (
     <div className="flex h-full w-64 flex-col bg-gray-900">
@@ -41,8 +66,8 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        {navigation.map((item) => {
+      <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
+        {visibleNav.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
           return (
             <Link
@@ -60,6 +85,35 @@ export function Sidebar() {
             </Link>
           )
         })}
+
+        {/* Admin section */}
+        {visibleAdmin.length > 0 && (
+          <>
+            <div className="pt-4 pb-2">
+              <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Administration
+              </h3>
+            </div>
+            {visibleAdmin.map((item) => {
+              const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-gray-800 text-white'
+                      : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                  )}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.name}
+                </Link>
+              )
+            })}
+          </>
+        )}
       </nav>
 
       {/* Agent Status */}
@@ -76,6 +130,14 @@ export function Sidebar() {
           ))}
         </div>
       </div>
+
+      {/* User info at bottom */}
+      {user && (
+        <div className="border-t border-gray-800 px-4 py-3">
+          <p className="text-sm font-medium text-white truncate">{user.name}</p>
+          <p className="text-xs text-gray-400 truncate">{user.role_name}</p>
+        </div>
+      )}
     </div>
   )
 }

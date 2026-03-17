@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
+import { requirePermission } from '@/lib/auth'
 import { z } from 'zod'
 
 const vendorSchema = z.object({
@@ -21,6 +22,9 @@ const vendorSchema = z.object({
 })
 
 export async function GET(request: NextRequest) {
+  const denied = await requirePermission('vendors', 'view')
+  if (denied) return denied
+
   try {
     const searchParams = request.nextUrl.searchParams
     const status = searchParams.get('status')
@@ -91,6 +95,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const denied = await requirePermission('vendors', 'create')
+  if (denied) return denied
+
   try {
     const body = await request.json()
     const validated = vendorSchema.parse(body)

@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requirePermission } from '@/lib/auth'
 import prisma from '@/lib/db'
 
 export async function GET(request: NextRequest) {
+  const denied = await requirePermission('dashboard', 'view')
+  if (denied) return denied
+
   try {
     // Fetch all dashboard metrics in parallel
     const [

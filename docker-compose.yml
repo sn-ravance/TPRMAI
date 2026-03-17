@@ -11,14 +11,13 @@ services:
       - "3020:3000"
     environment:
       - DATABASE_URL=postgresql://tprm_user:tprm_pass@db:5432/tprm_db
-      - NEXTAUTH_SECRET=local-dev-secret-change-in-production
       - NEXTAUTH_URL=http://localhost:3020
       - NODE_ENV=production
-      # OIDC (wired in Phase B)
-      # - OIDC_ISSUER_URL=http://mock-oidc:10090
-      # - OIDC_CLIENT_ID=mock-oidc-client
-      # - OIDC_CLIENT_SECRET=mock-oidc-secret
-      # - JWT_SECRET=<generated>
+      # OIDC
+      - OIDC_ISSUER_URL=http://mock-oidc:10090
+      - OIDC_CLIENT_ID=mock-oidc-client
+      - OIDC_CLIENT_SECRET=mock-oidc-secret
+      - JWT_SECRET=docker-dev-jwt-secret-not-for-production
       # AI Provider (wired in Phase C)
       # - AI_PROVIDER=anthropic_foundry
       # - AZURE_OPENAI_ENDPOINT=

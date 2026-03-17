@@ -9,6 +9,52 @@ datasource db {
 }
 
 // ============================================
+// RBAC: ROLES & PERMISSIONS
+// ============================================
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique // ADMIN, ANALYST, VIEWER, VENDOR
+  description String?
+  isSystem    Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  users           User[]
+  rolePermissions RolePermission[]
+  creator         User?   @relation("RoleCreator", fields: [createdBy], references: [id])
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String @id @default(cuid())
+  resource    String // e.g., "vendors", "findings", "users"
+  action      String // "view", "create", "edit", "delete"
+  description String?
+
+  // Relations
+  rolePermissions RolePermission[]
+
+  @@unique([resource, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ============================================
 // USER & AUTHENTICATION
 // ============================================
 
@@ -16,8 +62,8 @@ model User {
   id            String    @id @default(cuid())
   email         String    @unique
   name          String?
-  password      String?
-  role          String    @default("ANALYST") // ADMIN, ANALYST, VIEWER, VENDOR
+  oidcSubject   String?   @unique // OIDC "sub" claim for SSO matching
+  roleId        String
   department    String?
   isActive      Boolean   @default(true)
   lastLogin     DateTime?
@@ -25,41 +71,11 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   // Relations
+  role          Role      @relation(fields: [roleId], references: [id])
   auditTrails   AuditTrail[]
-  sessions      Session[]
-  accounts      Account[]
+  createdRoles  Role[]    @relation("RoleCreator")
 
   @@map("users")
-}
-
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@map("accounts")
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
 }
 
 // ============================================

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requirePermission } from '@/lib/auth'
 import prisma from '@/lib/db'
 import { z } from 'zod'
 
@@ -17,6 +18,9 @@ const findingUpdateSchema = z.object({
 })
 
 export async function GET(request: NextRequest) {
+  const denied = await requirePermission('findings', 'view')
+  if (denied) return denied
+
   try {
     const searchParams = request.nextUrl.searchParams
     const vendorId = searchParams.get('vendorId')

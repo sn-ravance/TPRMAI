@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server'
+import { requirePermission } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 export async function GET() {
+  const denied = await requirePermission('dashboard', 'view')
+  if (denied) return denied
+
   try {
     const [
       totalVendors,

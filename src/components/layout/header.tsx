@@ -1,10 +1,13 @@
 'use client'
 
-import { Bell, Search, User } from 'lucide-react'
+import { Bell, Search, LogOut, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { useAuth } from '@/lib/auth-context'
 
 export function Header() {
+  const { user, logout } = useAuth()
+
   return (
     <header className="flex h-16 items-center justify-between border-b bg-white px-6">
       {/* Search */}
@@ -29,11 +32,24 @@ export function Header() {
 
         <div className="flex items-center gap-3 border-l pl-4">
           <div className="text-right">
-            <p className="text-sm font-medium">Risk Analyst</p>
-            <p className="text-xs text-gray-500">Sleep Number</p>
+            <p className="text-sm font-medium">{user?.name || 'User'}</p>
+            <p className="text-xs text-gray-500">{user?.role_name || ''}</p>
           </div>
-          <Button variant="ghost" size="icon" className="rounded-full">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+            title="User profile"
+          >
             <User className="h-5 w-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={logout}
+            title="Sign out"
+          >
+            <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </div>

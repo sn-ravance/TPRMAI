@@ -1,47 +1,53 @@
 'use client'
 
-import { useState } from 'react'
-import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Shield, Loader2 } from 'lucide-react'
+import { Shield, LogIn } from 'lucide-react'
 
-export default function LoginPage() {
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
+const ERROR_MESSAGES: Record<string, string> = {
+  oidc_unavailable: 'Login service is unavailable. Please try again.',
+  oidc_denied: 'Login was cancelled or denied.',
+  no_code: 'Login failed. Please try again.',
+  auth_failed: 'Authentication failed. Please try again.',
+}
+
+function LoginContent() {
+  const searchParams = useSearchParams()
   const [error, setError] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [checking, setChecking] = useState(true)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-
-    try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
+  // Check if already logged in
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => {
+        if (res.ok) {
+          window.location.href = '/dashboard'
+        } else {
+          setChecking(false)
+        }
       })
+      .catch(() => setChecking(false))
+  }, [])
 
-      if (result?.error) {
-        setError('Invalid email or password')
-      } else {
-        router.push('/dashboard')
-      }
-    } catch (error) {
-      setError('An error occurred')
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    const errorCode = searchParams.get('error')
+    if (errorCode && ERROR_MESSAGES[errorCode]) {
+      setError(ERROR_MESSAGES[errorCode])
     }
+  }, [searchParams])
+
+  const handleLogin = () => {
+    window.location.href = '/api/auth/login'
   }
 
-  // For demo purposes, allow bypass
-  const handleDemoAccess = () => {
-    router.push('/dashboard')
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    )
   }
 
   return (
@@ -58,57 +64,17 @@ export default function LoginPage() {
             Third Party Risk Management for Sleep Number
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
-                {error}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Email</label>
-              <Input
-                type="email"
-                placeholder="analyst@sleepnumber.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+        <CardContent className="space-y-4">
+          {error && (
+            <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
+              {error}
             </div>
+          )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Password</label>
-              <Input
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Sign In
-            </Button>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-gray-500">Or</span>
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleDemoAccess}
-            >
-              Continue to Demo
-            </Button>
-          </form>
+          <Button onClick={handleLogin} className="w-full" size="lg">
+            <LogIn className="h-4 w-4 mr-2" />
+            Sign in with SSO
+          </Button>
 
           <p className="text-xs text-gray-500 text-center mt-6">
             Protected by Sleep Number Information Security
@@ -116,5 +82,19 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+          <div className="text-gray-500">Loading...</div>
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   )
 }

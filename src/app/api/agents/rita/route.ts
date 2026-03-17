@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requirePermission } from '@/lib/auth'
 import { rita } from '@/lib/agents'
 import { z } from 'zod'
 
@@ -17,6 +18,9 @@ const reportRequestSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
+  const denied = await requirePermission('agents', 'create')
+  if (denied) return denied
+
   try {
     const body = await request.json()
     const validated = reportRequestSchema.parse(body)

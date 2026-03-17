@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requirePermission } from '@/lib/auth'
 import { sara } from '@/lib/agents'
 import prisma from '@/lib/db'
 import { z } from 'zod'
@@ -9,6 +10,9 @@ const analysisRequestSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
+  const denied = await requirePermission('agents', 'create')
+  if (denied) return denied
+
   try {
     const body = await request.json()
     const validated = analysisRequestSchema.parse(body)

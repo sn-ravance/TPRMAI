@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { requirePermission } from '@/lib/auth'
 import prisma from '@/lib/db'
 import { z } from 'zod'
 
@@ -25,6 +26,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requirePermission('vendors', 'view')
+  if (denied) return denied
+
   try {
     const { id } = await params
     const vendor = await prisma.vendor.findUnique({
@@ -70,6 +74,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requirePermission('vendors', 'edit')
+  if (denied) return denied
+
   try {
     const { id } = await params
     const body = await request.json()
@@ -127,6 +134,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requirePermission('vendors', 'delete')
+  if (denied) return denied
+
   try {
     const { id } = await params
     const vendor = await prisma.vendor.findUnique({
