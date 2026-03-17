@@ -34,8 +34,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Prisma
-prisma/migrations/*
+# Prisma (migrations should be committed -- do NOT ignore)
 
 # Uploads
 /uploads/*
@@ -110,5 +109,6 @@ start-tprm.bat
 start.sh
 test-node.js
 test_db.js
-/scripts/
+# Legacy scripts (keep /scripts/ for app tooling)
+# /scripts/  -- commented out, seed-mock-services.sh lives here
 /assessments/
