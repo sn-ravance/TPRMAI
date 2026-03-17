@@ -3,8 +3,17 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Users, Plus, Shield } from 'lucide-react'
 
 interface UserRow {
@@ -151,38 +160,26 @@ export default function UserManagementPage() {
 
       <Card>
         <CardContent className="p-0">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">
-                  User
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">
-                  Role
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">
-                  Status
-                </th>
-                <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">
-                  Last Login
-                </th>
-                {canEdit && (
-                  <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">
-                    Actions
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody className="divide-y">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Last Login</TableHead>
+                {canEdit && <TableHead className="text-right">Actions</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {users.map((u) => (
-                <tr key={u.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
+                <TableRow key={u.id}>
+                  <TableCell>
                     <div>
-                      <p className="text-sm font-medium">{u.name || '—'}</p>
+                      <p className="font-medium">{u.name || '—'}</p>
                       <p className="text-xs text-gray-500">{u.email}</p>
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
+                  </TableCell>
+                  <TableCell>
                     {canEdit ? (
                       <select
                         className="border rounded px-2 py-1 text-sm"
@@ -200,25 +197,19 @@ export default function UserManagementPage() {
                         <Shield className="h-3 w-3" /> {u.role.name}
                       </span>
                     )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        u.isActive
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={u.isActive ? 'low' : 'critical'}>
                       {u.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-gray-500">
                     {u.lastLogin
                       ? new Date(u.lastLogin).toLocaleDateString()
                       : 'Never'}
-                  </td>
+                  </TableCell>
                   {canEdit && (
-                    <td className="px-6 py-4 text-right">
+                    <TableCell className="text-right">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -226,12 +217,12 @@ export default function UserManagementPage() {
                       >
                         {u.isActive ? 'Deactivate' : 'Reactivate'}
                       </Button>
-                    </td>
+                    </TableCell>
                   )}
-                </tr>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>

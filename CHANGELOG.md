@@ -2,6 +2,21 @@
 
 All notable changes to AI TPRM Machine will be documented in this file.
 
+## [2.2.0] - 2026-03-17
+
+### Added
+- **Reusable DataTable component** with sorting, pagination, and empty states (`src/components/ui/data-table.tsx`)
+- **Assessments page** (`/assessments`) — list, filter, and search vendor risk assessments
+- **Documents page** (`/documents`) — browse vendor security docs with status/expiration tracking
+- **Reports page** (`/reports`) — view AI-generated risk reports with content preview dialog
+- **Settings page** (`/settings`) — system info, user account details, AI agent configuration overview
+- **Assessments API** (`/api/assessments`) — GET with vendor, status, and type filters
+- **Reports API** (`/api/reports`) — GET with vendor, status, and type filters
+
+### Changed
+- Admin Users table upgraded from plain HTML to Radix UI Table component with Badge for status
+- All sidebar navigation links now point to implemented pages (no more stubs)
+
 ## [2.1.0] - 2026-03-17
 
 ### Changed

@@ -1,0 +1,265 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { DataTable, Column } from '@/components/ui/data-table'
+import {
+  FileText,
+  Search,
+  Upload,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  Building2,
+} from 'lucide-react'
+
+interface Document {
+  id: string
+  vendorId: string
+  documentType: string
+  documentName: string
+  fileSize: number | null
+  mimeType: string | null
+  uploadDate: string
+  expirationDate: string | null
+  status: string
+  retrievedBy: string | null
+  source: string | null
+  isCurrent: boolean
+  vendor: { id: string; name: string }
+  _count: { riskFindings: number }
+}
+
+const statusVariant = (s: string) => {
+  switch (s) {
+    case 'ANALYZED': return 'low'
+    case 'RECEIVED': return 'info'
+    case 'PENDING': case 'ANALYZING': return 'medium'
+    case 'EXPIRED': return 'high'
+    case 'REJECTED': return 'critical'
+    default: return 'secondary'
+  }
+}
+
+const typeLabel = (t: string) =>
+  t.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+
+function formatFileSize(bytes: number | null): string {
+  if (!bytes) return '—'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1048576).toFixed(1)} MB`
+}
+
+export default function DocumentsPage() {
+  const router = useRouter()
+  const [documents, setDocuments] = useState<Document[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (statusFilter) params.set('status', statusFilter)
+    fetch(`/api/documents?${params}`)
+      .then((r) => r.json())
+      .then((data) => setDocuments(Array.isArray(data) ? data : []))
+      .catch(() => setDocuments([]))
+      .finally(() => setLoading(false))
+  }, [statusFilter])
+
+  const filtered = documents.filter((d) =>
+    !search ||
+    d.vendor.name.toLowerCase().includes(search.toLowerCase()) ||
+    d.documentName.toLowerCase().includes(search.toLowerCase()) ||
+    d.documentType.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const total = documents.length
+  const analyzed = documents.filter((d) => d.status === 'ANALYZED').length
+  const pending = documents.filter((d) => d.status === 'PENDING' || d.status === 'RECEIVED').length
+  const expiring = documents.filter((d) => {
+    if (!d.expirationDate) return false
+    const exp = new Date(d.expirationDate)
+    const thirtyDays = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    return exp <= thirtyDays && d.status !== 'EXPIRED'
+  }).length
+
+  const columns: Column<Document>[] = [
+    {
+      key: 'documentName',
+      header: 'Document',
+      sortable: true,
+      render: (row) => (
+        <div>
+          <div className="font-medium">{row.documentName}</div>
+          <div className="text-xs text-gray-500">{typeLabel(row.documentType)}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'vendor.name',
+      header: 'Vendor',
+      sortable: true,
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <Building2 className="h-4 w-4 text-gray-400" />
+          <span>{row.vendor.name}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      sortable: true,
+      render: (row) => (
+        <Badge variant={statusVariant(row.status)}>{row.status}</Badge>
+      ),
+    },
+    {
+      key: 'fileSize',
+      header: 'Size',
+      sortable: true,
+      render: (row) => formatFileSize(row.fileSize),
+    },
+    {
+      key: '_count.riskFindings',
+      header: 'Findings',
+      sortable: true,
+      className: 'text-center',
+      render: (row) => row._count.riskFindings,
+    },
+    {
+      key: 'retrievedBy',
+      header: 'Source',
+      render: (row) => (
+        <span className="text-sm">
+          {row.retrievedBy ? (
+            <Badge variant="outline">{row.retrievedBy}</Badge>
+          ) : (
+            row.source || '—'
+          )}
+        </span>
+      ),
+    },
+    {
+      key: 'uploadDate',
+      header: 'Uploaded',
+      sortable: true,
+      render: (row) => new Date(row.uploadDate).toLocaleDateString(),
+    },
+    {
+      key: 'expirationDate',
+      header: 'Expires',
+      sortable: true,
+      render: (row) => {
+        if (!row.expirationDate) return <span className="text-gray-400">—</span>
+        const exp = new Date(row.expirationDate)
+        const isExpiring = exp <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        return (
+          <span className={isExpiring ? 'text-red-600 font-medium' : ''}>
+            {exp.toLocaleDateString()}
+          </span>
+        )
+      },
+    },
+  ]
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Documents</h1>
+          <p className="text-sm text-gray-500">
+            Vendor security documentation and certifications
+          </p>
+        </div>
+      </div>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="cursor-pointer hover:border-blue-300" onClick={() => setStatusFilter('')}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Total</p>
+                <p className="text-2xl font-bold">{total}</p>
+              </div>
+              <FileText className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="cursor-pointer hover:border-green-300" onClick={() => setStatusFilter('ANALYZED')}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Analyzed</p>
+                <p className="text-2xl font-bold">{analyzed}</p>
+              </div>
+              <CheckCircle className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="cursor-pointer hover:border-yellow-300" onClick={() => setStatusFilter('PENDING')}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Pending</p>
+                <p className="text-2xl font-bold">{pending}</p>
+              </div>
+              <Clock className="h-8 w-8 text-yellow-500" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Expiring Soon</p>
+                <p className="text-2xl font-bold">{expiring}</p>
+              </div>
+              <AlertTriangle className="h-8 w-8 text-red-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Table */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search documents..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            {statusFilter && (
+              <Button variant="ghost" size="sm" onClick={() => setStatusFilter('')}>
+                Clear filter
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <DataTable
+            columns={columns}
+            data={filtered}
+            loading={loading}
+            emptyIcon={<FileText className="h-12 w-12 text-gray-300 mb-3" />}
+            emptyTitle="No documents yet"
+            emptyDescription="Documents will appear here when uploaded or retrieved by DORA."
+            onRowClick={(row) => router.push(`/vendors/${row.vendor.id}`)}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
