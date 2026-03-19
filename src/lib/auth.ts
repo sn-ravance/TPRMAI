@@ -6,9 +6,16 @@ import prisma from '@/lib/db'
 // JWT Configuration
 // ============================================
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'dev-secret-change-in-production'
-)
+const jwtSecretValue = process.env.JWT_SECRET || 'dev-secret-change-in-production'
+const JWT_SECRET = new TextEncoder().encode(jwtSecretValue)
+
+function assertJwtSecret() {
+  if (jwtSecretValue === 'dev-secret-change-in-production') {
+    if (process.env.ENFORCE_SECRETS === 'true') {
+      throw new Error('FATAL: JWT_SECRET must be set in production. Do not use the default value.')
+    }
+  }
+}
 const TOKEN_COOKIE = 'token'
 const TOKEN_EXPIRY = '8h'
 
@@ -39,6 +46,7 @@ export interface CurrentUser {
 // ============================================
 
 export async function signToken(payload: AuthMe): Promise<string> {
+  assertJwtSecret()
   return new SignJWT(payload as unknown as Record<string, unknown>)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()

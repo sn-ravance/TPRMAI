@@ -14,8 +14,27 @@ export async function GET(request: NextRequest) {
 
     const authUrl = await getAuthorizationUrl(redirectUri, state)
 
-    // 302 redirect to OIDC provider
-    return NextResponse.redirect(authUrl)
+    // Next.js 16 strips Set-Cookie headers from redirect responses.
+    // Workaround: return an HTML page that sets the cookie and then redirects.
+    const isSecure = frontendUrl.startsWith('https')
+    const cookieFlags = `HttpOnly;SameSite=Lax;Path=/;Max-Age=300${isSecure ? ';Secure' : ''}`
+
+    const html = `<!DOCTYPE html><html><head>
+<meta http-equiv="refresh" content="0;url=${encodeURI(authUrl)}">
+<script>
+document.cookie="oidc_state=${state};${cookieFlags}";
+window.location.href=${JSON.stringify(authUrl)};
+</script>
+</head><body>Redirecting...</body></html>`
+
+    return new NextResponse(html, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html',
+        'Set-Cookie': `oidc_state=${state}; HttpOnly; SameSite=Lax; Path=/; Max-Age=300${isSecure ? '; Secure' : ''}`,
+        'Cache-Control': 'no-store',
+      },
+    })
   } catch (error) {
     console.error('Login error:', error)
     const errorRedirectUrl =

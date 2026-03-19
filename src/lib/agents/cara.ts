@@ -12,6 +12,7 @@
  */
 
 import { BaseAgent } from './base-agent'
+import { ASSESSMENT_SCORE_RULES, type ValidationRule } from '@/lib/ai/validate'
 import prisma from '@/lib/db'
 import type { AgentConfig, AgentResult, AssessmentInput, AssessmentOutput } from './types'
 
@@ -26,6 +27,10 @@ const CARA_CONFIG: AgentConfig = {
 export class CARAAgent extends BaseAgent {
   constructor() {
     super(CARA_CONFIG)
+  }
+
+  protected getOutputValidationRules(): ValidationRule[] {
+    return ASSESSMENT_SCORE_RULES
   }
 
   protected getDefaultSystemPrompt(): string {

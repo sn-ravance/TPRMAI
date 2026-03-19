@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const code = searchParams.get('code')
     const error = searchParams.get('error')
+    const returnedState = searchParams.get('state')
 
     if (error) {
       console.error('OIDC error:', error, searchParams.get('error_description'))
@@ -28,6 +29,15 @@ export async function GET(request: NextRequest) {
     if (!code) {
       return NextResponse.redirect(
         new URL('/login?error=no_code', frontendUrl)
+      )
+    }
+
+    // Validate OIDC state parameter to prevent login CSRF (RFC 6749 Section 10.12)
+    const storedState = request.cookies.get('oidc_state')?.value
+    if (!storedState || storedState !== returnedState) {
+      console.error('OIDC state mismatch: CSRF protection triggered')
+      return NextResponse.redirect(
+        new URL('/login?error=state_mismatch', frontendUrl)
       )
     }
 

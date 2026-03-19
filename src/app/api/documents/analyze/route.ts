@@ -151,6 +151,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
+    // Enforce file size limit (default 50MB)
+    const maxFileSize = parseInt(process.env.MAX_FILE_SIZE || '52428800', 10)
+    if (file.size > maxFileSize) {
+      return NextResponse.json(
+        { error: `File too large. Maximum size is ${Math.round(maxFileSize / 1024 / 1024)}MB.` },
+        { status: 400 }
+      )
+    }
+
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
     const fileType = getFileType(file.name, file.type)

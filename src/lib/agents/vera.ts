@@ -12,6 +12,7 @@
  */
 
 import { BaseAgent } from './base-agent'
+import { RISK_SCORE_RULES, type ValidationRule } from '@/lib/ai/validate'
 import prisma from '@/lib/db'
 import type {
   AgentConfig,
@@ -31,6 +32,10 @@ const VERA_CONFIG: AgentConfig = {
 export class VERAAgent extends BaseAgent {
   constructor() {
     super(VERA_CONFIG)
+  }
+
+  protected getOutputValidationRules(): ValidationRule[] {
+    return RISK_SCORE_RULES
   }
 
   protected getDefaultSystemPrompt(): string {

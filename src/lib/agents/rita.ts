@@ -12,6 +12,7 @@
  */
 
 import { BaseAgent } from './base-agent'
+import { REPORT_RULES, type ValidationRule } from '@/lib/ai/validate'
 import prisma from '@/lib/db'
 import type { AgentConfig, AgentResult, ReportInput, ReportOutput } from './types'
 
@@ -26,6 +27,10 @@ const RITA_CONFIG: AgentConfig = {
 export class RITAAgent extends BaseAgent {
   constructor() {
     super(RITA_CONFIG)
+  }
+
+  protected getOutputValidationRules(): ValidationRule[] {
+    return REPORT_RULES
   }
 
   protected getDefaultSystemPrompt(): string {

@@ -4,6 +4,17 @@
 // Works with any OIDC provider (mock-oidc in dev, Azure AD/Okta/etc in prod).
 // All URLs come from environment variables and OIDC discovery.
 
+const OIDC_CLIENT_ID = process.env.OIDC_CLIENT_ID || 'mock-oidc-client'
+const OIDC_CLIENT_SECRET = process.env.OIDC_CLIENT_SECRET || 'mock-oidc-secret'
+
+function assertOidcSecret() {
+  if (OIDC_CLIENT_SECRET === 'mock-oidc-secret') {
+    if (process.env.ENFORCE_SECRETS === 'true') {
+      throw new Error('FATAL: OIDC_CLIENT_SECRET must be set in production. Do not use the mock value.')
+    }
+  }
+}
+
 interface OIDCConfig {
   authorization_endpoint: string
   token_endpoint: string
@@ -50,7 +61,7 @@ export async function getAuthorizationUrl(
   const config = await getOIDCConfig()
   const params = new URLSearchParams({
     response_type: 'code',
-    client_id: process.env.OIDC_CLIENT_ID || 'mock-oidc-client',
+    client_id: OIDC_CLIENT_ID,
     redirect_uri: redirectUri,
     scope: 'openid email profile',
     state,
@@ -66,6 +77,7 @@ export async function exchangeCode(
   code: string,
   redirectUri: string
 ): Promise<{ access_token: string; id_token?: string }> {
+  assertOidcSecret()
   const config = await getOIDCConfig()
 
   const res = await fetch(config.token_endpoint, {
@@ -75,8 +87,8 @@ export async function exchangeCode(
       grant_type: 'authorization_code',
       code,
       redirect_uri: redirectUri,
-      client_id: process.env.OIDC_CLIENT_ID || 'mock-oidc-client',
-      client_secret: process.env.OIDC_CLIENT_SECRET || 'mock-oidc-secret',
+      client_id: OIDC_CLIENT_ID,
+      client_secret: OIDC_CLIENT_SECRET,
     }),
   })
 

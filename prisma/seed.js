@@ -253,7 +253,7 @@ async function main() {
             reportName: 'Articulate Global TPRM Assessment Report - March 2026',
             generatedBy: 'AI TPRM Machine (RITA)',
             generatedDate: new Date('2026-03-05'),
-            filePath: 'C:\\Users\\JOBLER\\OneDrive - Sleep Number Corporation\\AI TPRM docs\\Articulate-Global-TPRM-Assessment.docx',
+            filePath: 'reports/Articulate-Global-TPRM-Assessment.docx',
             status: 'APPROVED'
         }
     });
@@ -269,7 +269,7 @@ async function main() {
             reportName: 'Articulate Global Executive Summary - March 2026',
             generatedBy: 'AI TPRM Machine (RITA)',
             generatedDate: new Date('2026-03-05'),
-            filePath: 'C:\\Users\\JOBLER\\OneDrive - Sleep Number Corporation\\AI TPRM docs\\Articulate-Global-Executive-Summary.docx',
+            filePath: 'reports/Articulate-Global-Executive-Summary.docx',
             status: 'APPROVED'
         }
     });

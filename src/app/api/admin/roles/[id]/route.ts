@@ -1,5 +1,5 @@
 import prisma from '@/lib/db'
-import { requirePermission } from '@/lib/auth'
+import { requirePermission, getCurrentUser } from '@/lib/auth'
 
 export async function GET(
   _request: Request,
@@ -62,6 +62,17 @@ export async function PUT(
     },
   })
 
+  const currentUser = await getCurrentUser()
+  await prisma.auditTrail.create({
+    data: {
+      userId: currentUser?.id,
+      action: 'UPDATE',
+      entityType: 'Role',
+      entityId: id,
+      newValues: JSON.stringify(body),
+    },
+  })
+
   return Response.json(updated)
 }
 
@@ -97,6 +108,17 @@ export async function DELETE(
 
   await prisma.rolePermission.deleteMany({ where: { roleId: id } })
   await prisma.role.delete({ where: { id } })
+
+  const currentUser = await getCurrentUser()
+  await prisma.auditTrail.create({
+    data: {
+      userId: currentUser?.id,
+      action: 'DELETE',
+      entityType: 'Role',
+      entityId: id,
+      oldValues: JSON.stringify({ name: role.name }),
+    },
+  })
 
   return Response.json({ message: 'Role deleted' })
 }

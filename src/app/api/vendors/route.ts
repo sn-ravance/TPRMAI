@@ -1,23 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/db'
 import { requirePermission } from '@/lib/auth'
+import { sanitizeStrings } from '@/lib/sanitize-input'
 import { z } from 'zod'
 
 const vendorSchema = z.object({
-  name: z.string().min(1),
-  legalName: z.string().optional(),
-  dunsNumber: z.string().optional(),
-  website: z.string().url().optional().or(z.literal('')),
-  industry: z.string().optional(),
-  country: z.string().optional(),
-  stateProvince: z.string().optional(),
-  primaryContactName: z.string().optional(),
-  primaryContactEmail: z.string().email().optional().or(z.literal('')),
-  primaryContactPhone: z.string().optional(),
-  businessOwner: z.string().optional(),
-  itOwner: z.string().optional(),
-  contractStartDate: z.string().optional(),
-  contractEndDate: z.string().optional(),
+  name: z.string().min(1).max(255),
+  legalName: z.string().max(255).optional(),
+  dunsNumber: z.string().max(20).optional(),
+  website: z.string().url().max(500).optional().or(z.literal('')),
+  industry: z.string().max(255).optional(),
+  country: z.string().max(100).optional(),
+  stateProvince: z.string().max(100).optional(),
+  primaryContactName: z.string().max(255).optional(),
+  primaryContactEmail: z.string().email().max(255).optional().or(z.literal('')),
+  primaryContactPhone: z.string().max(50).optional(),
+  businessOwner: z.string().max(255).optional(),
+  itOwner: z.string().max(255).optional(),
+  contractStartDate: z.string().max(30).optional(),
+  contractEndDate: z.string().max(30).optional(),
   annualSpend: z.number().optional(),
 })
 
@@ -99,8 +100,13 @@ export async function POST(request: NextRequest) {
   if (denied) return denied
 
   try {
-    const body = await request.json()
-    const validated = vendorSchema.parse(body)
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
+    const validated = sanitizeStrings(vendorSchema.parse(body))
 
     const vendor = await prisma.vendor.create({
       data: {
@@ -141,7 +147,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: error.errors.map(e => ({ field: e.path.join('.'), message: e.message })) },
         { status: 400 }
       )
     }

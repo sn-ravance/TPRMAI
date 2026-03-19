@@ -16,10 +16,10 @@ export interface MaskResult {
   mappings: PiiMapping[]
 }
 
-// Counter for generating unique placeholders
-let counter = 0
-function nextId(): string {
-  return String(++counter).padStart(3, '0')
+// Request-scoped counter for unique placeholders (avoids module-level state issues)
+function makeIdGenerator(): () => string {
+  let counter = 0
+  return () => String(++counter).padStart(3, '0')
 }
 
 // Patterns for personal identifiers
@@ -37,6 +37,7 @@ export function maskPII(text: string): MaskResult {
   }
 
   const mappings: PiiMapping[] = []
+  const nextId = makeIdGenerator()
   let masked = text
 
   // SSNs first (most specific)
@@ -77,8 +78,8 @@ export function unmaskPII(text: string, mappings: PiiMapping[]): string {
 }
 
 /**
- * Reset the counter (useful for testing).
+ * @deprecated No longer needed -- counters are now request-scoped.
  */
 export function resetMaskerCounter(): void {
-  counter = 0
+  // No-op: counters are now created per-call via makeIdGenerator()
 }

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/auth'
 import prisma from '@/lib/db'
+import { sanitizeStrings } from '@/lib/sanitize-input'
 import { z } from 'zod'
 
 const documentSchema = z.object({
-  vendorId: z.string(),
+  vendorId: z.string().max(100),
   documentType: z.enum([
     'SOC2_TYPE1',
     'SOC2_TYPE2',
@@ -19,9 +20,9 @@ const documentSchema = z.object({
     'PRIVACY_POLICY',
     'OTHER',
   ]),
-  documentName: z.string(),
-  documentDate: z.string().optional(),
-  expirationDate: z.string().optional(),
+  documentName: z.string().max(500),
+  documentDate: z.string().max(30).optional(),
+  expirationDate: z.string().max(30).optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -76,8 +77,13 @@ export async function POST(request: NextRequest) {
   if (denied) return denied
 
   try {
-    const body = await request.json()
-    const validated = documentSchema.parse(body)
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
+    const validated = sanitizeStrings(documentSchema.parse(body))
 
     // Check if vendor exists
     const vendor = await prisma.vendor.findUnique({
@@ -121,7 +127,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Validation failed', details: error.errors.map(e => ({ field: e.path.join('.'), message: e.message })) },
         { status: 400 }
       )
     }

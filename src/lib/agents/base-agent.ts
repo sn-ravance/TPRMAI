@@ -1,7 +1,7 @@
 import { complete, completeJSON } from '@/lib/ai/provider'
 import { getPrompt } from '@/lib/prompts'
 import { sanitizePromptInput, wrapUserInput, validatePromptSize } from '@/lib/ai/sanitize'
-import { safeParseJSON } from '@/lib/ai/validate'
+import { safeParseJSON, validateAgentOutput, type ValidationRule } from '@/lib/ai/validate'
 import { maskPII, unmaskPII, type PiiMapping } from '@/lib/ai/pii-masker'
 import { sanitizeAIError } from '@/lib/ai/errors'
 import prisma from '@/lib/db'
@@ -19,6 +19,11 @@ export abstract class BaseAgent {
 
   /** Default system prompt (used as fallback if DB prompt not found). */
   protected abstract getDefaultSystemPrompt(): string
+
+  /** Optional validation rules for structured AI output. Override in subclasses. */
+  protected getOutputValidationRules(): ValidationRule[] | null {
+    return null
+  }
 
   /** DB slug for this agent's system prompt, e.g. "vera-system". */
   protected get systemPromptSlug(): string {
@@ -95,6 +100,19 @@ export abstract class BaseAgent {
       if (!parsed.success) {
         throw new Error(parsed.error)
       }
+
+      // Validate AI output against rules if defined
+      const rules = this.getOutputValidationRules()
+      if (rules && typeof parsed.data === 'object' && parsed.data !== null) {
+        const validation = validateAgentOutput(parsed.data as Record<string, unknown>, rules)
+        if (!validation.valid) {
+          console.warn(`[${this.config.name}] AI output validation warnings:`, validation.errors)
+        }
+        if (validation.sanitizedData) {
+          return validation.sanitizedData as T
+        }
+      }
+
       return parsed.data
     } catch (error) {
       if (error instanceof Error && error.message.startsWith('Failed to parse')) {
