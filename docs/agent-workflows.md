@@ -2,7 +2,7 @@
 
 ## Overview
 
-TPRMAI uses 6 specialized AI agents coordinated by an orchestrator to automate third-party risk management. Each agent has a specific role, AI model tier, and standardized input/output contract.
+TPRMAI uses 7 specialized AI agents coordinated by an orchestrator to automate third-party risk management. Each agent has a specific role, AI model tier, and standardized input/output contract.
 
 All agents extend `BaseAgent` (`src/lib/agents/base-agent.ts`) which provides:
 - DB-driven prompt management with fallback defaults
@@ -28,6 +28,7 @@ Pipeline: sanitizeInput → validateSize → maskPII → AI call → unmaskPII �
 | **SARA** | Security Analysis & Risk Articulation | complex | 0.2 | 4000 | Security document analysis |
 | **RITA** | Report Intelligence & Threat Assessment | standard | 0.3 | 4000 | Report generation & dashboards |
 | **MARS** | Management, Action & Remediation Supervisor | standard | 0.3 | 3000 | Remediation tracking & escalation |
+| **AURA** | Automated Upload & Recognition | standard | 0.3 | 4096 | Document extraction & similarity |
 
 ---
 
@@ -305,6 +306,74 @@ Manages remediation lifecycle: plans, tracking, escalation, and risk acceptance 
 
 ### Risk Acceptance (PUT)
 Requires `findingId`, `justification` (min 50 chars), and `approver`. Sets 1-year expiration.
+
+---
+
+## AURA — Automated Upload & Recognition
+
+**File:** `src/lib/agents/aura.ts`
+**API:** `POST /api/agents/aura`
+
+Utility agent for the document-driven onboarding workflow. Extracts vendor information from uploaded documents and compares document similarity for deduplication. Unlike orchestrator agents, AURA is called directly by onboarding routes.
+
+**Two managed prompts:** `aura-system` (extraction) and `aura-similarity` (comparison) — both editable via admin prompt management UI.
+
+### Document Extraction (execute)
+
+Handles both text documents (via BaseAgent `invokeWithJSON` pipeline) and images (via multimodal `chat()` with system prompt).
+
+#### Input
+```typescript
+{
+  text: string              // extracted document text
+  isImage: boolean
+  imageBase64?: string      // base64-encoded image data
+  imageMime?: string        // e.g., 'image/png'
+  fileName: string
+}
+```
+
+#### Output
+```typescript
+{
+  vendorInfo: {
+    name, legalName, dunsNumber, address, phone,
+    primaryContactName, primaryContactEmail, primaryContactPhone,
+    industry, website, documentDate, documentType
+  }
+  confidence: Record<string, number>   // 0.0–1.0 per field
+  documentAnalysis: {
+    documentType, summary, keyFindings[], riskFactors[],
+    strengths[], recommendedRating, controlsCovered[],
+    expirationDate, recommendations[]
+  }
+}
+```
+
+### Document Similarity (compareDocuments)
+
+Compares two document excerpts to classify their relationship. Uses simple tier with low temperature for deterministic comparison.
+
+#### Input
+```typescript
+{
+  existingDoc: { name, date, snippet }
+  newDoc: { name, date, snippet }
+}
+```
+
+#### Output
+```typescript
+{
+  similarity: 'identical' | 'updated' | 'different'
+  confidence: number
+  explanation: string
+}
+```
+
+### Side Effects
+- Logs `DOCUMENT_EXTRACTION` and `DOCUMENT_COMPARISON` activities
+- Documents created via onboarding are tagged `retrievedBy: 'AURA'`
 
 ---
 

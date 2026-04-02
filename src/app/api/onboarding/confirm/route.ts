@@ -135,7 +135,7 @@ export async function POST(request: Request) {
           status: 'ANALYZED',
           analysisResult: JSON.stringify(doc.analysisResult),
           source: 'Document Onboarding',
-          retrievedBy: 'DORA',
+          retrievedBy: 'AURA',
           isCurrent: true,
         },
       })

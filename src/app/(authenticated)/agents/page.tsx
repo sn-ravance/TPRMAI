@@ -15,6 +15,7 @@ import {
   BarChart3,
   Wrench,
   AlertTriangle,
+  Upload,
 } from 'lucide-react'
 
 const agents = [
@@ -112,6 +113,22 @@ const agents = [
       'Progress tracking',
       'Escalation management',
       'Risk acceptance workflow',
+    ],
+  },
+  {
+    id: 'AURA',
+    name: 'AURA',
+    fullName: 'Automated Upload & Recognition Agent',
+    description:
+      'Analyzes uploaded vendor documents to extract vendor identity, classify document types, assess risk factors, and compare document similarity for deduplication.',
+    icon: Upload,
+    color: 'text-teal-600',
+    bgColor: 'bg-teal-50',
+    capabilities: [
+      'Vendor info extraction from documents',
+      'Document type classification',
+      'Risk factor identification',
+      'Document similarity comparison',
     ],
   },
 ]
@@ -258,6 +275,7 @@ export default function AgentsPage() {
                 <li>POST /api/agents/sara - Document analysis</li>
                 <li>POST /api/agents/rita - Report generation</li>
                 <li>POST /api/agents/mars - Remediation</li>
+                <li>POST /api/agents/aura - Document extraction & comparison</li>
                 <li>POST /api/orchestrator - Full workflow</li>
                 <li>PATCH /api/orchestrator - Maintenance</li>
               </ul>

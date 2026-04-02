@@ -11,6 +11,7 @@ export { dora, DORAAgent } from './dora'
 export { sara, SARAAgent } from './sara'
 export { rita, RITAAgent } from './rita'
 export { mars, MARSAgent } from './mars'
+export { aura, AURAAgent } from './aura'
 
 // Orchestrator
 export { orchestrator, AgentOrchestrator } from './orchestrator'
@@ -53,4 +54,9 @@ export { BaseAgent } from './base-agent'
  *   - Creates remediation plans
  *   - Tracks progress and escalates
  *   - Manages risk acceptance
+ *
+ * AURA - Automated Upload & Recognition Agent
+ *   - Extracts vendor info from uploaded documents
+ *   - Classifies document types and assesses risk
+ *   - Compares document similarity for deduplication
  */

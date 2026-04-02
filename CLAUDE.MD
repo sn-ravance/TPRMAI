@@ -55,7 +55,7 @@ TPRMAI/
 │   ├── components/              # UI components (Radix + Tailwind)
 │   ├── lib/
 │   │   ├── ai/                  # AI provider abstraction + safety controls
-│   │   ├── agents/              # 6 AI agents (VERA, CARA, DORA, SARA, RITA, MARS)
+│   │   ├── agents/              # 7 AI agents (VERA, CARA, DORA, SARA, RITA, MARS, AURA)
 │   │   └── prompts.ts           # DB-backed prompt loader with safety preamble
 │   └── middleware.ts            # Auth guard (JWT validation)
 ├── prisma/                      # Schema + seed data

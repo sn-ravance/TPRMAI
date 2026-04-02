@@ -1053,6 +1053,107 @@ Level 4: Notification to CISO/leadership
 
 Always be professional but firm in communications. Document everything thoroughly.`,
     },
+    {
+      slug: 'aura-system',
+      name: 'AURA System Prompt',
+      description: 'Core system prompt for Automated Upload & Recognition Agent - document extraction',
+      category: 'system',
+      agentName: 'AURA',
+      model: 'standard',
+      temperature: 0.3,
+      maxTokens: 4096,
+      content: `You are an expert at extracting vendor/company information from business documents (contracts, SOC 2 reports, security questionnaires, certificates, penetration test reports, etc.).
+
+Extract the vendor/company being ASSESSED or DESCRIBED in this document — NOT the auditor, assessor, or testing firm.
+
+For each field, provide a confidence score (0.0 to 1.0) indicating how certain you are.
+
+Also analyze the document for TPRM risk assessment purposes.
+
+Return JSON with this exact structure:
+{
+  "vendorInfo": {
+    "name": "string or null",
+    "legalName": "string or null",
+    "dunsNumber": "string or null",
+    "address": {
+      "street": "string or null",
+      "city": "string or null",
+      "state": "string or null",
+      "country": "string or null",
+      "zip": "string or null"
+    },
+    "phone": "string or null",
+    "primaryContactName": "string or null",
+    "primaryContactEmail": "string or null",
+    "primaryContactPhone": "string or null",
+    "industry": "string or null",
+    "website": "string or null",
+    "documentDate": "YYYY-MM-DD or null",
+    "documentType": "SOC2_TYPE1 | SOC2_TYPE2 | ISO27001 | PENTEST | VULNERABILITY_SCAN | SIG_QUESTIONNAIRE | CAIQ | CUSTOM_QUESTIONNAIRE | INSURANCE_CERTIFICATE | BUSINESS_CONTINUITY | PRIVACY_POLICY | OTHER"
+  },
+  "confidence": {
+    "name": 0.0,
+    "legalName": 0.0,
+    "dunsNumber": 0.0,
+    "address": 0.0,
+    "phone": 0.0,
+    "primaryContactName": 0.0,
+    "primaryContactEmail": 0.0,
+    "primaryContactPhone": 0.0,
+    "industry": 0.0,
+    "website": 0.0,
+    "documentDate": 0.0,
+    "documentType": 0.0
+  },
+  "documentAnalysis": {
+    "documentType": "SOC2_TYPE2 | ISO27001 | PENTEST | CAIQ | BCP | ARCHITECTURE | BRIDGE_LETTER | SOA | EXECUTIVE_SUMMARY | OTHER",
+    "summary": "Brief summary of the document",
+    "keyFindings": ["finding1", "finding2"],
+    "riskFactors": ["risk1", "risk2"],
+    "strengths": ["strength1", "strength2"],
+    "recommendedRating": "CRITICAL | HIGH | MEDIUM | LOW",
+    "controlsCovered": ["control1", "control2"],
+    "expirationDate": "YYYY-MM-DD or null",
+    "recommendations": ["recommendation1", "recommendation2"]
+  }
+}
+
+If a field is not found in the document, set it to null with confidence 0.0.`,
+    },
+    {
+      slug: 'aura-similarity',
+      name: 'AURA Similarity Prompt',
+      description: 'Document similarity comparison prompt for Automated Upload & Recognition Agent',
+      category: 'system',
+      agentName: 'AURA',
+      model: 'simple',
+      temperature: 0.2,
+      maxTokens: 500,
+      content: `Compare these two document excerpts from the same vendor and determine their relationship.
+
+Document A (existing, dated {dateA}):
+<doc_a>
+{docA}
+</doc_a>
+
+Document B (new upload, dated {dateB}):
+<doc_b>
+{docB}
+</doc_b>
+
+Return JSON:
+{
+  "similarity": "identical | updated | different",
+  "confidence": 0.95,
+  "explanation": "Brief explanation of the relationship"
+}
+
+Definitions:
+- "identical": Same document content, possibly different formatting. Same findings and conclusions.
+- "updated": Newer version of the same document type covering the same vendor. Contains updated information.
+- "different": Different documents entirely (different type, scope, or subject).`,
+    },
   ]
 
   for (const def of promptDefs) {

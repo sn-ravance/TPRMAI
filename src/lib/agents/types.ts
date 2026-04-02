@@ -2,7 +2,7 @@
 
 import type { ModelTier } from '@/lib/ai/provider'
 
-export type AgentName = 'VERA' | 'CARA' | 'DORA' | 'SARA' | 'RITA' | 'MARS'
+export type AgentName = 'VERA' | 'CARA' | 'DORA' | 'SARA' | 'RITA' | 'MARS' | 'AURA'
 
 export interface AgentConfig {
   name: AgentName
@@ -187,4 +187,59 @@ export interface RemediationPlan {
   }[]
   timeline: string
   escalationPath: string[]
+}
+
+// AURA Types
+export interface DocumentExtractionInput {
+  text: string
+  isImage: boolean
+  imageBase64?: string
+  imageMime?: string
+  fileName: string
+}
+
+export interface DocumentExtractionOutput {
+  vendorInfo: {
+    name: string | null
+    legalName: string | null
+    dunsNumber: string | null
+    address: {
+      street: string | null
+      city: string | null
+      state: string | null
+      country: string | null
+      zip: string | null
+    }
+    phone: string | null
+    primaryContactName: string | null
+    primaryContactEmail: string | null
+    primaryContactPhone: string | null
+    industry: string | null
+    website: string | null
+    documentDate: string | null
+    documentType: string | null
+  }
+  confidence: Record<string, number>
+  documentAnalysis: {
+    documentType: string
+    summary: string
+    keyFindings: string[]
+    riskFactors: string[]
+    strengths: string[]
+    recommendedRating: string
+    controlsCovered: string[]
+    expirationDate: string | null
+    recommendations: string[]
+  }
+}
+
+export interface DocumentComparisonInput {
+  existingDoc: { name: string; date: string | null; snippet: string }
+  newDoc: { name: string; date: string | null; snippet: string }
+}
+
+export interface DocumentComparisonOutput {
+  similarity: 'identical' | 'updated' | 'different'
+  confidence: number
+  explanation: string
 }

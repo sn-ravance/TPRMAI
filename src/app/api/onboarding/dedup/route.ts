@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server'
 import { requirePermission } from '@/lib/auth'
 import { findVendorMatches, type ExtractedVendorInfo } from '@/lib/vendors/dedup'
-import { chat } from '@/lib/ai/provider'
-import { safeParseJSON } from '@/lib/ai/validate'
-import { SAFETY_PREAMBLE } from '@/lib/ai/safety-preamble'
 import { sanitizeAIError } from '@/lib/ai/errors'
+import { aura } from '@/lib/agents'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,75 +20,6 @@ interface DocumentComparison {
   existingDocDate: string | null
   newDocDate: string | null
   explanation: string
-}
-
-const SIMILARITY_PROMPT = `Compare these two document excerpts from the same vendor and determine their relationship.
-
-Document A (existing, dated {dateA}):
-<doc_a>
-{docA}
-</doc_a>
-
-Document B (new upload, dated {dateB}):
-<doc_b>
-{docB}
-</doc_b>
-
-Return JSON:
-{
-  "similarity": "identical | updated | different",
-  "confidence": 0.95,
-  "explanation": "Brief explanation of the relationship"
-}
-
-Definitions:
-- "identical": Same document content, possibly different formatting. Same findings and conclusions.
-- "updated": Newer version of the same document type covering the same vendor. Contains updated information.
-- "different": Different documents entirely (different type, scope, or subject).`
-
-async function compareDocuments(
-  existingDoc: { name: string; date: string | null; snippet: string },
-  newDoc: { name: string; date: string | null; snippet: string }
-): Promise<DocumentComparison> {
-  try {
-    const prompt = SIMILARITY_PROMPT
-      .replace('{dateA}', existingDoc.date || 'unknown')
-      .replace('{dateB}', newDoc.date || 'unknown')
-      .replace('{docA}', existingDoc.snippet.slice(0, 3000))
-      .replace('{docB}', newDoc.snippet.slice(0, 3000))
-
-    const response = await chat(
-      [
-        { role: 'system', content: SAFETY_PREAMBLE + 'You are a document comparison expert.' },
-        { role: 'user', content: prompt },
-      ],
-      { temperature: 0.2, maxTokens: 500, tier: 'simple' }
-    )
-
-    const parsed = safeParseJSON<{ similarity: string; confidence: number; explanation: string }>(response.content)
-    if (parsed.success && parsed.data) {
-      const sim = parsed.data.similarity as 'identical' | 'updated' | 'different'
-      return {
-        existingDocName: existingDoc.name,
-        newDocName: newDoc.name,
-        similarity: ['identical', 'updated', 'different'].includes(sim) ? sim : 'different',
-        existingDocDate: existingDoc.date,
-        newDocDate: newDoc.date,
-        explanation: parsed.data.explanation || '',
-      }
-    }
-  } catch (e) {
-    console.error('Document comparison error:', e)
-  }
-
-  return {
-    existingDocName: existingDoc.name,
-    newDocName: newDoc.name,
-    similarity: 'different',
-    existingDocDate: existingDoc.date,
-    newDocDate: newDoc.date,
-    explanation: 'Could not determine similarity',
-  }
 }
 
 export async function POST(request: Request) {
@@ -112,24 +41,21 @@ export async function POST(request: Request) {
     // Find vendor matches using multi-point dedup
     const matches = await findVendorMatches(vendorInfo)
 
-    // For each match, compare uploaded documents against existing
+    // For each match, compare uploaded documents against existing via AURA
     const matchesWithComparisons = await Promise.all(
       matches.map(async (match) => {
         const documentComparisons: DocumentComparison[] = []
 
         if (match.vendor.documents.length > 0 && documents.length > 0) {
-          // Compare each new document against existing documents of the same type
           for (const newDoc of documents) {
-            // Find existing docs of the same type, or fall back to comparing all
             const existingCandidates = match.vendor.documents.filter(
               (ed) => ed.documentType === newDoc.documentType
             )
             const toCompare = existingCandidates.length > 0
               ? existingCandidates
-              : match.vendor.documents.slice(0, 3) // compare against first 3 if no type match
+              : match.vendor.documents.slice(0, 3)
 
             for (const existingDoc of toCompare) {
-              // Get snippet from existing doc's analysis result
               let existingSnippet = ''
               if (existingDoc.analysisResult) {
                 try {
@@ -146,19 +72,39 @@ export async function POST(request: Request) {
 
               if (!existingSnippet && !newDoc.textSnippet) continue
 
-              const comparison = await compareDocuments(
-                {
+              // Delegate to AURA agent for document comparison
+              const result = await aura.compareDocuments({
+                existingDoc: {
                   name: existingDoc.documentName,
                   date: existingDoc.documentDate?.toISOString().split('T')[0] || null,
                   snippet: existingSnippet,
                 },
-                {
+                newDoc: {
                   name: newDoc.fileName,
                   date: newDoc.documentDate || null,
                   snippet: newDoc.textSnippet,
-                }
-              )
-              documentComparisons.push(comparison)
+                },
+              })
+
+              if (result.success && result.data) {
+                documentComparisons.push({
+                  existingDocName: existingDoc.documentName,
+                  newDocName: newDoc.fileName,
+                  similarity: result.data.similarity,
+                  existingDocDate: existingDoc.documentDate?.toISOString().split('T')[0] || null,
+                  newDocDate: newDoc.documentDate || null,
+                  explanation: result.data.explanation,
+                })
+              } else {
+                documentComparisons.push({
+                  existingDocName: existingDoc.documentName,
+                  newDocName: newDoc.fileName,
+                  similarity: 'different',
+                  existingDocDate: existingDoc.documentDate?.toISOString().split('T')[0] || null,
+                  newDocDate: newDoc.documentDate || null,
+                  explanation: 'Could not determine similarity',
+                })
+              }
             }
           }
         }

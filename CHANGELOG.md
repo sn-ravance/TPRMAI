@@ -2,6 +2,24 @@
 
 All notable changes to AI TPRM Machine will be documented in this file.
 
+## [2.8.0] - 2026-04-02
+
+### Added
+- **AURA Agent** (Automated Upload & Recognition): 7th AI agent formalizing document extraction and similarity comparison
+  - Extends BaseAgent with full safety pipeline (sanitize, validate, PII mask, prompt management)
+  - Two managed prompts: `aura-system` (extraction, standard tier) and `aura-similarity` (comparison, simple tier)
+  - Both prompts editable via admin AI Prompt Management UI
+  - `POST /api/agents/aura` endpoint with discriminated union for extract/compare actions
+  - Multimodal support for image document extraction
+  - Activity logging for both DOCUMENT_EXTRACTION and DOCUMENT_COMPARISON
+
+### Changed
+- Refactored `/api/onboarding/extract` to delegate to AURA agent (removes 60-line inline prompt + manual chat() call)
+- Refactored `/api/onboarding/dedup` to delegate to `aura.compareDocuments()` (removes inline SIMILARITY_PROMPT + manual chat() call)
+- Documents created via onboarding now show `retrievedBy: 'AURA'` instead of `'USER_UPLOAD'`
+- Sidebar now displays all 7 agents (added AURA)
+- Updated `docs/agent-workflows.md` with AURA section
+
 ## [2.7.0] - 2026-04-01
 
 ### Added
