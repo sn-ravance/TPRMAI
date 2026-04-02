@@ -14,6 +14,9 @@ const nextConfig = {
   },
   // Turbopack config (Next.js 16+ uses Turbopack by default)
   turbopack: {},
+  // Exclude jspdf from client SSR bundle — fflate/lib/node.cjs uses dynamic Worker
+  // that Turbopack can't resolve. jspdf loads lazily via dynamic import() client-side only.
+  serverExternalPackages: ['jspdf'],
   // Webpack fallback for packages that need it
   webpack: (config) => {
     config.externals = [...(config.externals || []), 'canvas', 'jsdom'];

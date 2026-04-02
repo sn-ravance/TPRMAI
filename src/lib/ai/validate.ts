@@ -152,6 +152,32 @@ export function safeParseJSON<T>(text: string): { success: true; data: T } | { s
       const data = JSON.parse(jsonStr.trim()) as T
       return { success: true, data }
     } catch (error) {
+      // 5. Attempt truncation recovery — if the JSON was cut off mid-string,
+      //    try to close open strings, arrays, and objects to salvage partial data
+      if (error instanceof Error && /unterminated string|unexpected end/i.test(error.message)) {
+        try {
+          let recovered = text
+          const jsonMatch2 = text.match(/```(?:json)?\s*\n?([\s\S]*?)(?:```|$)/)
+          if (jsonMatch2) recovered = jsonMatch2[1]
+          const start2 = recovered.search(/[{[]/)
+          if (start2 !== -1) recovered = recovered.substring(start2)
+
+          // Close any unterminated string
+          const quoteCount = (recovered.match(/(?<!\\)"/g) || []).length
+          if (quoteCount % 2 !== 0) recovered += '"'
+
+          // Close open arrays and objects in reverse order
+          const openBraces = (recovered.match(/\{/g) || []).length - (recovered.match(/\}/g) || []).length
+          const openBrackets = (recovered.match(/\[/g) || []).length - (recovered.match(/\]/g) || []).length
+          for (let i = 0; i < openBrackets; i++) recovered += ']'
+          for (let i = 0; i < openBraces; i++) recovered += '}'
+
+          const data = JSON.parse(recovered) as T
+          return { success: true, data }
+        } catch {
+          // Recovery failed — fall through to original error
+        }
+      }
       return { success: false, error: `Failed to parse AI response as JSON: ${error instanceof Error ? error.message : 'unknown error'}` }
     }
   }

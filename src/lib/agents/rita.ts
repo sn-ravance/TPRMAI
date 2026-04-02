@@ -21,7 +21,7 @@ const RITA_CONFIG: AgentConfig = {
   description: 'Report Intelligence & Threat Assessment Agent',
   tier: 'standard',
   temperature: 0.3,
-  maxTokens: 4000,
+  maxTokens: 12000,
 }
 
 export class RITAAgent extends BaseAgent {
