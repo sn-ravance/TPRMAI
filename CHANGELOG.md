@@ -2,6 +2,33 @@
 
 All notable changes to AI TPRM Machine will be documented in this file.
 
+## [2.7.0] - 2026-04-01
+
+### Added
+- **Document-Driven Vendor Onboarding**: Upload vendor documents and the system automatically extracts vendor info, checks for duplicates, and triggers the full AI assessment pipeline
+  - New "Upload & Onboard" button on the Documents page
+  - AI-powered vendor info extraction from PDFs, DOCX, XLSX, and images (standard tier)
+  - Multi-point vendor deduplication: exact DUNS match (strong) + fuzzy matching on name, phone, address, and contacts
+  - Semantic document similarity comparison via AI (simple tier) to detect identical, updated, or different documents
+  - Side-by-side vendor comparison dialog when duplicates are found
+  - Pre-filled vendor form with confidence indicators for AI-extracted fields
+  - Full orchestrator pipeline integration (VERA→CARA→DORA→RITA for new vendors, SARA→MARS→RITA for reassessment)
+  - Pipeline progress stepper showing real-time agent execution status
+- **3 new API endpoints**: `/api/onboarding/extract`, `/api/onboarding/dedup`, `/api/onboarding/confirm`
+- **Shared text extraction utility** (`src/lib/documents/extract-text.ts`) — factored out from analyze route
+- **Vendor dedup utility** (`src/lib/vendors/dedup.ts`) — multi-point matching with string-similarity
+- **5 new UI components**: `onboarding-wizard`, `file-upload-zone`, `vendor-info-form`, `dedup-match-dialog`, `pipeline-progress`
+- **string-similarity** npm package for fuzzy vendor name/contact matching
+
+### Changed
+- Refactored `/api/documents/analyze` to use shared text extraction utility (no behavior change)
+
+## [2.6.0] - 2026-04-01
+
+### Added
+- **docs/agent-workflows.md**: Complete documentation for all 6 AI agents (VERA, CARA, DORA, SARA, RITA, MARS), orchestrator workflows, BaseAgent pipeline, tier assignments, and input/output contracts
+- **docs/api-endpoints.md**: Complete API reference for all 42 endpoints across auth, vendors, assessments, documents, findings, reports, dashboard, agents, orchestrator, and admin routes
+
 ## [2.5.0] - 2026-04-01
 
 ### Changed

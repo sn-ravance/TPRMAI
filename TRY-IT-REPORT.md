@@ -1,17 +1,17 @@
 # AI TPRM Machine -- Try-It Report
-> Tested: 2026-04-01 19:08 CDT
-> Status: All Passing
+> Tested: 2026-04-02
+> Status: All Passing (53 passed, 1 expected 403, 6 N/A)
 
 ## Summary
 
-Your app was tested automatically. Here's what happened:
+Your app was tested automatically across 4 user roles and 8 pages.
 
 | What Was Tested | Result |
 |----------------|--------|
 | App starts up | PASS |
-| Login works | PASS |
-| All pages load | 11 of 11 passing |
-| Permissions work correctly | PASS |
+| Login works (4 roles) | PASS |
+| All pages load | 8 of 8 passing |
+| Permissions work correctly | PASS (Vendor role correctly denied reports API) |
 | API is responding | PASS |
 | Logout works | PASS |
 
@@ -19,67 +19,74 @@ Your app was tested automatically. Here's what happened:
 
 Each type of user was tested:
 
-| User Type | Login | Dashboard | Pages Tested | Permissions | Result |
-|-----------|-------|-----------|-------------|-------------|--------|
-| Admin (Alex Admin) | PASS | PASS | 11 of 11 | 44 permissions | PASS |
-| Analyst (Sam Analyst) | PASS | PASS | 11 of 11 | 32 permissions | PASS |
-| Viewer (Val Viewer) | PASS | PASS | 11 of 11 | 8 permissions | PASS |
-| Vendor (Vic Vendor) | PASS | PASS | 11 of 11 | 11 permissions | PASS |
+| User Type | Login | Dashboard | Pages Tested | Result |
+|-----------|-------|-----------|-------------|--------|
+| Admin (Alex Admin) | PASS | PASS | 8 of 8 | PASS |
+| Analyst (Sam Analyst) | PASS | PASS | 6 of 6 | PASS |
+| Viewer (Val Viewer) | PASS | PASS | 6 of 6 | PASS |
+| Vendor (Vic Vendor) | PASS | PASS | 6 of 6 | PASS |
 
 ## Pages Tested
 
-All pages return HTTP 200. Permission enforcement happens at the API level -- restricted actions/data are blocked per role.
+| Page | Admin | Analyst | Viewer | Vendor | Notes |
+|------|-------|---------|--------|--------|-------|
+| Dashboard | PASS | PASS | PASS | PASS | 18 vendors, 15 critical/high, 67% compliance |
+| Vendors | PASS | PASS | PASS | PASS | 20 vendors with risk tiers and scores |
+| Assessments | PASS | PASS | PASS | PASS | 24 assessments, mixed statuses |
+| Documents | PASS | PASS | PASS | PASS | 36 docs, "Upload & Onboard" button visible |
+| Reports | PASS | PASS | PASS | PASS | AI-generated reports with statuses |
+| Settings | PASS | PASS | PASS | PASS | System info and user details |
+| Admin: Users | PASS | N/A | N/A | N/A | Admin only |
+| Admin: Roles | PASS | N/A | N/A | N/A | Admin only |
 
-| Page | Admin | Analyst | Viewer | Vendor |
-|------|-------|---------|--------|--------|
-| Dashboard | PASS | PASS | PASS | PASS |
-| Vendors | PASS | PASS | PASS | PASS |
-| Assessments | PASS | PASS | PASS | PASS |
-| Documents | PASS | PASS | PASS | PASS |
-| Findings | PASS | PASS | PASS | PASS |
-| Reports | PASS | PASS | PASS | PASS |
-| Settings | PASS | PASS | PASS | PASS |
-| Admin > Users | PASS | PASS | PASS | PASS |
-| Admin > Roles | PASS | PASS | PASS | PASS |
-| Admin > Prompts | PASS | PASS | PASS | PASS |
-| Agents | PASS | PASS | PASS | PASS |
+## API Testing
 
-## API Endpoints Tested
-
-| Endpoint | Status | Data |
-|----------|--------|------|
-| /api/vendors | PASS | Vendors loaded |
-| /api/assessments | PASS | 8 items |
-| /api/documents | PASS | 12 items |
-| /api/findings | PASS | Findings loaded |
-| /api/reports | PASS | 7 items |
-| /api/admin/users | PASS | 4 items |
-| /api/admin/roles | PASS | 4 items |
-| /api/admin/prompts | PASS | 6 items |
-| /api/auth/me | PASS | Returns user info with role |
-| /api/auth/logout | PASS | Clears token cookie |
+| Endpoint | Admin | Analyst | Viewer | Vendor |
+|----------|-------|---------|--------|--------|
+| /api/vendors | PASS | PASS | PASS | PASS |
+| /api/assessments | PASS | PASS | PASS | PASS |
+| /api/documents | PASS | PASS | PASS | PASS |
+| /api/reports | PASS | PASS | PASS | 403 (expected) |
+| /api/dashboard/stats | PASS | PASS | PASS | PASS |
 
 ## Seed Data
 
 The database is populated with realistic test data:
-- 7 vendors (Snowflake, Salesforce, CrowdStrike, Workday, Stripe, Acme Logistics, CloudSecure Analytics)
-- 8 risk assessments
-- 12 security documents
-- 7 risk reports
+- 18+ vendors (Snowflake, Salesforce, CrowdStrike, Workday, Stripe, Acme Logistics, CloudSecure Analytics, and more from onboarding tests)
+- 24 risk assessments across multiple statuses
+- 36 security documents (SOC 2, pen tests, questionnaires)
+- AI-generated risk reports with approval workflows
 - 6 managed AI prompts (CARA, DORA, MARS, RITA, SARA, VERA)
 - 4 users with 4 roles and 40+ permissions
+
+## Screenshots
+
+Screenshots of each page (per role) are saved in `.try-it/screenshots/`:
+
+- `admin_login.png` - SSO login page
+- `admin_dashboard.png` - Risk dashboard with metrics
+- `admin_vendors.png` - Vendor list with risk tiers
+- `admin_assessments.png` - Assessment tracker
+- `admin_documents.png` - Document library with Upload & Onboard
+- `admin_reports.png` - AI-generated reports
+- `admin_settings.png` - System settings
+- `admin_admin-users.png` - User management
+- `admin_admin-roles.png` - Role/permission matrix
+- `analyst_*.png` - Same pages from Analyst perspective
+- `viewer_*.png` - Same pages from Viewer perspective
+- `vendor_*.png` - Same pages from Vendor perspective (no admin pages)
 
 ## How to Access Your App
 
 - **Open your browser to:** http://localhost:3020
-- **To log in as Admin:** Click "Sign In", pick "Alex Admin" from the login screen
-- **To log in as Analyst:** Click "Sign In", pick "Sam Analyst" from the login screen
-- **To log in as Viewer:** Click "Sign In", pick "Val Viewer" from the login screen
-- **To log in as Vendor:** Click "Sign In", pick "Vic Vendor" from the login screen
+- **To log in as Admin:** Click "Sign in with SSO", pick "Alex Admin" from the login screen
+- **To log in as Analyst:** Click "Sign in with SSO", pick "Sam Analyst" from the login screen
+- **To log in as Viewer:** Click "Sign in with SSO", pick "Val Viewer" from the login screen
+- **To log in as Vendor:** Click "Sign in with SSO", pick "Vic Vendor" from the login screen
 
 ## Issues Found
 
-No issues found -- all tests passed.
+No issues found. The one 403 response (Vendor accessing /api/reports) is correct RBAC behavior -- Vendor users don't have permission to view reports.
 
 ## What to Do Next
 - Explore your app in the browser (see instructions above)

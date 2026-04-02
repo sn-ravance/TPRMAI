@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DataTable, Column } from '@/components/ui/data-table'
+import { OnboardingWizard } from '@/components/onboarding/onboarding-wizard'
 import {
   FileText,
   Search,
@@ -61,6 +62,7 @@ export default function DocumentsPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams()
@@ -178,7 +180,27 @@ export default function DocumentsPage() {
             Vendor security documentation and certifications
           </p>
         </div>
+        <Button onClick={() => setShowOnboarding(true)}>
+          <Upload className="h-4 w-4 mr-2" />
+          Upload &amp; Onboard
+        </Button>
       </div>
+
+      <OnboardingWizard
+        open={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        onComplete={() => {
+          // Refresh documents list
+          setLoading(true)
+          const params = new URLSearchParams()
+          if (statusFilter) params.set('status', statusFilter)
+          fetch(`/api/documents?${params}`)
+            .then((r) => r.json())
+            .then((data) => setDocuments(Array.isArray(data) ? data : []))
+            .catch(() => setDocuments([]))
+            .finally(() => setLoading(false))
+        }}
+      />
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

@@ -8,9 +8,10 @@
 
 - [ ] **Testing: Add test suite** - No tests currently exist. Add Jest/Vitest for unit tests, Playwright for E2E
 - [x] ~~**UI: Review component completeness** - Check if all pages listed in features are implemented~~
-- [ ] **AI Agents: Document agent workflows** - Create documentation for each agent's capabilities and triggers
-- [ ] **API: Document endpoints** - Create API documentation for all routes
+- [x] ~~**AI Agents: Document agent workflows** - Create documentation for each agent's capabilities and triggers~~
+- [x] ~~**API: Document endpoints** - Create API documentation for all routes~~
 - [ ] **Tooling UX: Smoother /resume-it after /retrofit-it** - When a vibe coder exits Claude after using /retrofit-it and comes back via /resume-it, the experience feels disconnected. /resume-it should detect retrofit state, present clear context on what phase they're in, and make it obvious the user doesn't need to do anything technical -- just say what to work on next
+- [ ] **Onboarding: Add business criticality selection** - The onboarding wizard defaults to STANDARD business criticality; add a selector step for data types accessed, system integrations, PII/PHI/PCI flags, and criticality level
 
 ## Low Priority
 
