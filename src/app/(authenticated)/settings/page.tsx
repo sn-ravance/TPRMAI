@@ -19,6 +19,7 @@ const AI_AGENTS = [
   { name: 'SARA', desc: 'Security Analysis & Risk Articulation', tier: 'complex' },
   { name: 'RITA', desc: 'Report Intelligence & Threat Assessment', tier: 'standard' },
   { name: 'MARS', desc: 'Management, Action & Remediation Supervisor', tier: 'standard' },
+  { name: 'AURA', desc: 'Automated Upload & Recognition Agent', tier: 'simple' },
 ]
 
 const tierColor = (t: string) => {

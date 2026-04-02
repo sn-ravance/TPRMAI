@@ -2,6 +2,19 @@
 
 All notable changes to AI TPRM Machine will be documented in this file.
 
+## [2.9.0] - 2026-04-02
+
+### Added
+- **Functional Notification Bell**: Click the bell icon to see a dropdown of color-coded notifications
+  - Red = Escalations, Orange = Remediation Required, Blue = Document Requests
+  - Click a notification to see full details in a modal dialog
+  - "Go to" button navigates to the relevant page (findings, vendors, documents, etc.)
+  - Mark individual notifications or all as read
+  - Unread badge count with 30-second auto-polling
+  - Notifications scoped to logged-in user: broadcast INTERNAL + targeted by user ID
+- **Notification API**: `GET /api/notifications`, `PATCH /api/notifications`, `GET /api/notifications/count`
+- **Seed notifications**: 5 sample notifications (escalations, remediation, document requests) tied to seeded users and findings
+
 ## [2.8.0] - 2026-04-02
 
 ### Added

@@ -604,8 +604,9 @@ async function main() {
   }
 
   // 3. Create seed users
+  const userMap: Record<string, string> = {}
   for (const userDef of SEED_USERS) {
-    await prisma.user.upsert({
+    const user = await prisma.user.upsert({
       where: { email: userDef.email },
       update: {
         name: userDef.name,
@@ -621,7 +622,8 @@ async function main() {
         lastLogin: new Date(),
       },
     })
-    console.log(`  User: ${userDef.email} -> ${userDef.roleName}`)
+    userMap[userDef.roleName] = user.id
+    console.log(`  User: ${userDef.email} -> ${userDef.roleName} (${user.id})`)
   }
 
   // 4. Create vendors
@@ -708,11 +710,12 @@ async function main() {
   console.log(`  ${ASSESSMENTS.length} assessments`)
 
   // 8. Create findings
+  const findingMap: Record<string, string> = {}
   for (const f of FINDINGS) {
     const vendorId = vendorMap[f.vendorName]
     if (!vendorId) continue
 
-    await prisma.riskFinding.create({
+    const finding = await prisma.riskFinding.create({
       data: {
         vendorId,
         title: f.title,
@@ -727,6 +730,10 @@ async function main() {
         recommendation: f.recommendation,
       },
     })
+    // Key by vendor name for notification seed references
+    if (!findingMap[f.vendorName]) {
+      findingMap[f.vendorName] = finding.id
+    }
   }
   console.log(`  ${FINDINGS.length} findings`)
 
@@ -1173,6 +1180,96 @@ Definitions:
     }
   }
   console.log(`  ${promptDefs.length} managed prompts`)
+
+  // 12. Create sample notifications
+  const notificationSeeds = [
+    {
+      recipientType: 'INTERNAL',
+      recipientId: null, // broadcast to all internal users
+      notificationType: 'ESCALATION',
+      title: '[ESCALATION L3] Overdue Action: Snowflake data residency remediation',
+      message: 'Remediation action for Snowflake is 14 days overdue. Priority: HIGH. Data residency controls for EU customer data must be addressed immediately. The vendor has not responded to two previous follow-ups.',
+      relatedEntityType: 'RiskFinding',
+      relatedEntityId: findingMap['Snowflake'] || null,
+      sentBy: 'MARS',
+      status: 'PENDING',
+      daysAgo: 1,
+    },
+    {
+      recipientType: 'INTERNAL',
+      recipientId: null, // broadcast
+      notificationType: 'ESCALATION',
+      title: '[ESCALATION L2] Overdue Action: Workday access review remediation',
+      message: 'Remediation action for Workday is 7 days overdue. Priority: HIGH. Privileged access review exceptions from last quarterly audit require resolution before next compliance checkpoint.',
+      relatedEntityType: 'RiskFinding',
+      relatedEntityId: findingMap['Workday'] || null,
+      sentBy: 'MARS',
+      status: 'PENDING',
+      daysAgo: 2,
+    },
+    {
+      recipientType: 'INTERNAL',
+      recipientId: userMap['ADMIN'] || null, // targeted to admin
+      notificationType: 'REMEDIATION_REQUIRED',
+      title: 'Remediation Required: Salesforce change management exception',
+      message: 'A MEDIUM severity finding requires your review. The SOC 2 Type II report identified an exception in change management controls — two emergency changes were deployed without post-deployment review. Recommended action: require retroactive change review and update the emergency change procedure.',
+      relatedEntityType: 'RiskFinding',
+      relatedEntityId: findingMap['Salesforce'] || null,
+      sentBy: 'MARS',
+      status: 'PENDING',
+      daysAgo: 3,
+    },
+    {
+      recipientType: 'INTERNAL',
+      recipientId: userMap['ANALYST'] || null, // targeted to analyst
+      notificationType: 'DOCUMENT_REQUEST',
+      title: 'Document Request Sent: Workday SIG Questionnaire',
+      message: 'DORA has sent a document request to Workday for their annual SIG Lite Questionnaire. The current questionnaire on file expires in 30 days. Please follow up if not received within 14 business days.',
+      relatedEntityType: 'Vendor',
+      relatedEntityId: vendorMap['Workday'] || null,
+      sentBy: 'DORA',
+      status: 'PENDING',
+      daysAgo: 5,
+    },
+    {
+      recipientType: 'INTERNAL',
+      recipientId: null, // broadcast, already read
+      notificationType: 'ESCALATION',
+      title: '[ESCALATION L1] Reminder: Stripe API rate limiting remediation approaching due date',
+      message: 'Remediation action for Stripe is approaching its due date in 7 days. Priority: MEDIUM. API rate limiting controls need to be validated per the agreed remediation timeline.',
+      relatedEntityType: 'RiskFinding',
+      relatedEntityId: findingMap['Stripe'] || null,
+      sentBy: 'MARS',
+      status: 'READ',
+      daysAgo: 10,
+    },
+  ]
+
+  // Clear old seed notifications before re-seeding
+  await prisma.notification.deleteMany({
+    where: { sentBy: { in: ['MARS', 'DORA'] }, message: { contains: 'remediation' } },
+  })
+
+  for (const n of notificationSeeds) {
+    const createdAt = new Date(Date.now() - n.daysAgo * 24 * 60 * 60 * 1000)
+    await prisma.notification.create({
+      data: {
+        recipientType: n.recipientType,
+        recipientId: n.recipientId,
+        notificationType: n.notificationType,
+        title: n.title,
+        message: n.message,
+        relatedEntityType: n.relatedEntityType,
+        relatedEntityId: n.relatedEntityId,
+        sentBy: n.sentBy,
+        status: n.status,
+        readAt: n.status === 'READ' ? createdAt : null,
+        sentAt: createdAt,
+        createdAt,
+      },
+    })
+  }
+  console.log(`  ${notificationSeeds.length} notifications`)
 
   console.log('Seed completed!')
 }
