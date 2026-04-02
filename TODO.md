@@ -14,8 +14,6 @@
 
 ## Low Priority
 
-- [ ] **Cleanup: Remove unused scripts** - Many standalone .js scripts in root (create_*.js, read_*.js) - evaluate if needed
-- [ ] **Cleanup: Remove Windows-specific files** - .bat files, node-v22 references may not be needed on Mac
 - [ ] **CI/CD: Set up GitHub Actions** - Configure automated testing and deployment pipeline
 
 ## Completed
@@ -40,3 +38,5 @@
 - [x] **Retrofit Phase C** - Multi-provider AI abstraction, model tiering, LangChain removal
 - [x] **Retrofit Phase D** - UI pages (Assessments, Documents, Reports, Settings), DataTable component, admin table upgrade
 - [x] **Retrofit Phase E** - Rich seed data, security headers, Terraform templates, deployment config
+- [x] **Cleanup: Remove legacy files** - Removed skills/ (8.6MB generic Claude skills), diagrams/, DATABASE_SETUP.md, TPRM-Process-Requirements.md
+- [x] **Cleanup: Update CLAUDE.MD** - Updated project structure and tech stack to reflect current state

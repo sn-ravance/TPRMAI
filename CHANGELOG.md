@@ -2,6 +2,19 @@
 
 All notable changes to AI TPRM Machine will be documented in this file.
 
+## [2.4.0] - 2026-03-20
+
+### Removed
+- **skills/** directory (8.6 MB) — generic Claude Code skills (pptx, algorithmic-art, canvas-design, etc.) unrelated to the TPRM app
+- **diagrams/** directory — draw.io and mermaid TPRM process diagrams from original OneDrive import
+- **DATABASE_SETUP.md** — outdated SQLite setup instructions (app now uses PostgreSQL via Docker)
+- **TPRM-Process-Requirements.md** — original requirements doc from OneDrive import
+
+### Changed
+- Updated **CLAUDE.MD** with current tech stack (PostgreSQL, OIDC, RBAC, AI Safety, Docker) and accurate project structure
+- Updated **.gitignore** to prevent removed directories from being re-added
+- Cleaned up **TODO.md** — marked cleanup items complete
+
 ## [2.3.0] - 2026-03-17
 
 ### Added

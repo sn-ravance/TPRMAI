@@ -94,6 +94,12 @@ infra/.terraform.lock.hcl
 infra/prod.tfvars
 infra/staging.tfvars
 
+# Legacy (removed in cleanup -- prevent re-addition)
+/skills/
+/diagrams/
+DATABASE_SETUP.md
+TPRM-Process-Requirements.md
+
 # Legacy scripts (from original OneDrive import)
 TPRM_Demo_OnePager.md
 build_slide.js
@@ -117,6 +123,4 @@ start-tprm.bat
 start.sh
 test-node.js
 test_db.js
-# Legacy scripts (keep /scripts/ for app tooling)
-# /scripts/  -- commented out, seed-mock-services.sh lives here
 /assessments/

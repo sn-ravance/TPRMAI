@@ -19,8 +19,11 @@ This project integrates AI capabilities with enterprise GRC (Governance, Risk, a
   - Primary: Claude Opus 4.6
   - Fallback: Claude Opus 4.5
   - OpenAI is optional alternative only
-- **ORM**: Prisma with SQLite
+- **ORM**: Prisma with PostgreSQL
+- **Auth**: OIDC + stateless JWT, database-driven RBAC (4 system roles)
 - **UI**: Radix UI + Tailwind CSS
+- **AI Safety**: Input sanitization, output validation, rate limiting, PII masking, NeMo Guardrails
+- **Infra**: Docker Compose (app + PostgreSQL + mock-oidc), Terraform (Azure)
 - **API Integrations**: AuditBoard REST API
 
 ## API Integrations
@@ -46,15 +49,20 @@ See `.claude/skills/auditboard/` for the complete API integration skill.
 ## Project Structure
 
 ```
-AI TPRM MACHINE/
-├── .claude/
-│   └── skills/
-│       └── auditboard/          # AuditBoard API integration skill
-│           ├── SKILL.md         # Skill documentation
-│           ├── scripts/         # Python client and utilities
-│           └── references/      # API documentation
-├── node_modules/                # Node.js dependencies
-├── node-v22.12.0-win-x64/       # Node.js runtime
+TPRMAI/
+├── src/
+│   ├── app/                     # Next.js pages and API routes
+│   ├── components/              # UI components (Radix + Tailwind)
+│   ├── lib/
+│   │   ├── ai/                  # AI provider abstraction + safety controls
+│   │   ├── agents/              # 6 AI agents (VERA, CARA, DORA, SARA, RITA, MARS)
+│   │   └── prompts.ts           # DB-backed prompt loader with safety preamble
+│   └── middleware.ts            # Auth guard (JWT validation)
+├── prisma/                      # Schema + seed data
+├── mock-services/mock-oidc/     # OIDC provider for local dev
+├── infra/                       # Terraform (Azure)
+├── docs/attestations/           # NeMo Guardrails safety attestations
+├── docker-compose.yml           # App + PostgreSQL + mock-oidc
 └── CLAUDE.MD                    # This file
 ```
 

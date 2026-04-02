@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const cookieFlags = `HttpOnly;SameSite=Lax;Path=/;Max-Age=300${isSecure ? ';Secure' : ''}`
 
     const html = `<!DOCTYPE html><html><head>
-<meta http-equiv="refresh" content="0;url=${encodeURI(authUrl)}">
+<meta http-equiv="refresh" content="0;url=${authUrl}">
 <script>
 document.cookie="oidc_state=${state};${cookieFlags}";
 window.location.href=${JSON.stringify(authUrl)};
